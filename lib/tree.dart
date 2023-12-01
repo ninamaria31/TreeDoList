@@ -5,24 +5,28 @@ enum Priority { low, medium, high }
 
 /// A class representing a task (leaf) or task group (node)
 ///
-/// Each node has a 128 bit [_id], [name], a [_completed] state
+/// Each node has a 128 bit [id], [name], a [_completed] state
 class TreeNode {
   // 128 bit random number so we can ignore collisions
-  Uuid _id = const Uuid();
+  String id = const Uuid().v4();
   bool _completed = false;
+
   /// backlink to the Parent for faster lookup
   TreeNode? parent;
 
   /// Name of the task our task group
   String name = '';
+
   /// Optional description of the task (group)
   String? description;
+
   /// the priority
   Priority priority;
 
   /// Timestamp since the last modification
   /// (in microseconds since January 1, 1970, 00:00:00 UTC)
   int modified;
+
   /// Timestamp since the deletion
   /// (in microseconds since January 1, 1970, 00:00:00 UTC)
   int? deleted;
@@ -40,8 +44,8 @@ class TreeNode {
   /// A constructor for creating nodes only used for comparisons
   /// against other nodes
   ///
-  /// takes just the [_id]
-  TreeNode.comparisonNode(this._id)
+  /// takes just the [id]
+  TreeNode.comparisonNode(this.id)
       : priority = Priority.medium,
         modified = 0;
 
@@ -49,11 +53,11 @@ class TreeNode {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TreeNode && runtimeType == other.runtimeType && _id == other._id;
+      other is TreeNode && runtimeType == other.runtimeType && id == other.id;
 
   // just use the id's hash since we assume the uuids dont collide
   @override
-  int get hashCode => _id.hashCode;
+  int get hashCode => id.hashCode;
 
   /// adds TreeNodes to this TreeNode's [children] and set the [parent]
   ///
@@ -70,6 +74,7 @@ class TreeNode {
 class Tree {
   /// the root node
   TreeNode root;
+
   /// Set with all nodes for fast lookup of specific nodes
   HashSet<TreeNode> _allNodes = HashSet();
 
@@ -98,8 +103,9 @@ class Tree {
     for (var currentLevel = 1; currentLevel < level; currentLevel++) {
       // add all nodes of the next level to the temporary storage
       for (TreeNode currentNode in traversalQueue) {
-        tmp.add(currentNode);
+        tmp.addAll(currentNode.children);
       }
+      traversalQueue.clear();
       // add the nodes of the next level to the traversalQueue
       traversalQueue.addAll(tmp);
       // clear the temporary node storage
@@ -111,7 +117,8 @@ class Tree {
   }
 
   /// find the node with the [nodeId]
-  TreeNode? findNodeWithId(Uuid nodeId) => _allNodes.lookup(TreeNode.comparisonNode(nodeId));
+  TreeNode? findNodeWithId(String nodeId) =>
+      _allNodes.lookup(TreeNode.comparisonNode(nodeId));
 
   /// adds a child to a TreeNode
   ///
@@ -120,8 +127,13 @@ class Tree {
   ///
   /// returns true if the [child] has successfully been added to the TreeNode's
   /// children as well as to the [_allNodes] lookup hashset
-  bool addChildToNode(Uuid nodeId, TreeNode child) {
+  bool addChildToNode(String nodeId, TreeNode child) {
     TreeNode? targetNode = findNodeWithId(nodeId);
+
+    if (child.children.isNotEmpty) {
+      throw UnimplementedError(
+          'Trying to add a TreeNode with children to a TreeNode is not yet implemented!');
+    }
 
     if (targetNode == null ||
         !_allNodes.add(child) ||

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'tree_view.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(TreeViewApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -122,4 +123,14 @@ class _MyHomePageState extends State<MyHomePage> {
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+}
+
+class TreeViewApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: TreeView(),
+    );
+  }
+
 }
