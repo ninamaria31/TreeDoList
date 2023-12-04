@@ -1,78 +1,66 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
-        useMaterial3: true,
+        theme: ThemeData(
+          primaryColor: Colors.lightGreen,
+        ),
+      debugShowCheckedModeBanner: false, // remove debug banner
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Your App Title'),
+        ),
+        body: YourMainScreenContent(),
+        floatingActionButton: SettingsButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat
       ),
-      home: const MyHomePage(title: 'TreeDoList'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
+class YourMainScreenContent extends StatelessWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    // Your main screen content goes here
+    return Container(
+      // Your main screen content
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+class SettingsButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () {
+        // Navigate to the settings screen or show a settings dialog
+        // You can use Navigator to push a new screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SettingsScreen()),
+        );
+      },
+      child: const Icon(Icons.menu),
+    );
   }
+}
 
+class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Icon(Icons.menu, color: Colors.black, size: 30),
-            Container(height: 40, width: 40, child: ClipRRect(
-              child: Image.asset('assets/images/logo.png'),
-            ),
-            ),
-          ]),
-        ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+        title: const Text('Settings'),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: const Center(
+        child: Text('Your settings screen content goes here.'),
+      ),
     );
   }
 }
