@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'tree.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
-import 'app_constants.dart';
+import '../app_constants.dart';
 
 Future<Tree> loadExampleJson() async {
   try {

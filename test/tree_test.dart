@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:test/test.dart';
-import 'package:tree_do/tree.dart';
+import 'package:tree_do/tree/tree.dart';
 import 'package:collection/collection.dart';
 
 void main () {
