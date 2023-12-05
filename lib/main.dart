@@ -11,9 +11,9 @@ void main() {
         future: loadExampleJson(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return TreeVisualizer(tree: snapshot.data ?? Tree());
+            return TreeOverviewWidget(tree: snapshot.data ?? Tree());
           } else {
-            return CircularProgressIndicator();
+            return const CircularProgressIndicator();
           }
         },
       ),

@@ -1,4 +1,6 @@
 import 'dart:collection';
+import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 enum Priority { low, medium, high }
@@ -33,6 +35,8 @@ class TreeNode {
 
   /// Hashset of the Trees children
   HashSet<TreeNode> children;
+  /// widest part down this subtree needed for the visualisation
+  int leafsInSubTree;
 
   /// Constructor for TreeNodes
   ///
@@ -41,7 +45,8 @@ class TreeNode {
   TreeNode(this.name, this.priority, [this.description])
       : modified = DateTime.now().microsecondsSinceEpoch,
         children = HashSet(),
-        id = const Uuid().v4();
+        id = const Uuid().v4(),
+        leafsInSubTree = 1;
 
   /// Constructs TreeNode that have already existed before
   ///
@@ -49,7 +54,8 @@ class TreeNode {
   /// but the grandchildren not
   TreeNode.existingNode(this.id, this.name, this.description, this.priority,
       this._completed, this.modified, this.deleted, Iterable<TreeNode> childTasks)
-      : children = HashSet() {
+      : children = HashSet(),
+        leafsInSubTree = 1 {
     for (var child in childTasks) {
       addChild(child);
     }
@@ -88,7 +94,8 @@ class TreeNode {
   TreeNode.comparisonNode(this.id)
       : priority = Priority.medium,
         modified = 0,
-        children = HashSet();
+        children = HashSet(),
+        leafsInSubTree = 1;
 
   // Override == and hashCode in order to store this in a hash set
   @override
@@ -103,20 +110,30 @@ class TreeNode {
   /// adds TreeNodes to this TreeNode's [children] and set the [parent]
   ///
   /// takes a [child]
+  /// also updates [leafsInSubTree] in its parent if necessary
   ///
   /// return true if successful
   bool addChild(TreeNode child) {
+    // if we used to be a leaf we need to take that into account
+    int leafIncrease = (children.isEmpty) ? child.leafsInSubTree - 1 : child.leafsInSubTree;
+    if(!children.add(child)) {
+      return false;
+    }
     child.parent = this;
-    return children.add(child);
+
+    // update our own leaf count
+    if (leafIncrease != 0) {
+      updateLeafCount(leafIncrease);
+    }
+    return true;
   }
 
-  static String? convertToNullableString(String input) {
-    return (input == "Null") ? null : input;
+  void updateLeafCount(int incLeafCount) {
+    leafsInSubTree += incLeafCount;
+    parent?.updateLeafCount(incLeafCount);
   }
 
-  static int? convertToNullableInt(String input) {
-    return (input == "Null") ? null : int.parse(input);
-  }
+  int get numberChildren => children.length;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
@@ -125,7 +142,7 @@ class Tree {
   TreeNode root;
 
   /// Set with all nodes for fast lookup of specific nodes
-  HashSet<TreeNode> _taskSet = HashSet();
+  final HashSet<TreeNode> _taskSet = HashSet();
 
   /// Constructor for a new Tree
   Tree() : root = TreeNode('Root', Priority.medium) {
