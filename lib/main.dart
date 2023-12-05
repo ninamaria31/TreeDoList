@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'tree_view.dart';
 import 'tree_overview.dart';
@@ -5,19 +7,18 @@ import 'tree.dart';
 
 void main() {
   //runApp(TreeViewApp());
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    MaterialApp(
-      home: FutureBuilder<Tree>(
-        future: loadExampleJson(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return TreeVisualizer(tree: snapshot.data ?? Tree());
-          } else {
-            return CircularProgressIndicator();
-          }
-        },
-      ),
-    ),
+   FutureBuilder<Tree>(
+       future: loadExampleJson(),
+       builder: (context, snapshot) {
+         if (snapshot.connectionState == ConnectionState.done) {
+           return TreeViewApp(tree: snapshot.data ?? Tree());
+         } else {
+           return const CircularProgressIndicator();
+         }
+       },
+     ),
   );
 }
 
@@ -142,11 +143,27 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class TreeViewApp extends StatelessWidget {
+  final Tree tree;
+
+  const TreeViewApp({super.key, required this.tree});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: TreeView(),
+      title: 'Test App',
+        home: Scaffold(
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              title: const Text('Test'),
+            ),
+            body: Center(
+                child: MaterialApp(
+                    home: TreeOverviewWidget(tree: tree)
+                )
+            )
+        )
     );
+
   }
 
 }
