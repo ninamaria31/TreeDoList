@@ -44,7 +44,8 @@ class TreeOverviewWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           NodeWidget(
-              name: currentNode.name),
+              node: currentNode
+          ),
           if (currentNode.numberChildren > 0) ...[
             SizedBox(
               width: AppConstants.canvasWidth,
@@ -75,7 +76,6 @@ class ConnectionLayerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    int numberOfNodes = node.numberChildren;
     double canvasHeight = AppConstants.subTreeHeight(node.leafsInSubTree);
 
 
@@ -121,34 +121,51 @@ class ConnectionLayerPainter extends CustomPainter {
 
 /// widget used to draw a node
 class NodeWidget extends StatelessWidget {
-  final String name;
+  final TreeNode node;
 
-  const NodeWidget({super.key, required this.name});
+  const NodeWidget({super.key, required this.node});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-        padding: const EdgeInsets.only(
-            top: AppConstants.verticalNodePadding,
-            bottom: AppConstants.verticalNodePadding),
-        child: Container(
-            height: AppConstants.nodeHeight,
-            width: AppConstants.nodeWidth,
-            decoration: BoxDecoration(
-              border: Border.all(
-                  color: Colors.black, width: AppConstants.nodeLineWidth),
-              borderRadius:
-                  BorderRadius.circular(AppConstants.nodeBorderRadius),
-            ),
-            child: Center(
-              child: Text(name,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: AppConstants.nodeFontSize,
-                      color: Colors.black,
-                      decoration: TextDecoration.none),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1),
-            )));
+    return GestureDetector(
+      onTap: () => _showDetails(context, node),
+      child: Padding(
+          padding: const EdgeInsets.only(
+              top: AppConstants.verticalNodePadding,
+              bottom: AppConstants.verticalNodePadding),
+          child: Container(
+              height: AppConstants.nodeHeight,
+              width: AppConstants.nodeWidth,
+              decoration: BoxDecoration(
+                border: Border.all(
+                    color: Colors.black, width: AppConstants.nodeLineWidth),
+                borderRadius:
+                    BorderRadius.circular(AppConstants.nodeBorderRadius),
+              ),
+              child: Center(
+                child: Text(node.name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: AppConstants.nodeFontSize,
+                        color: Colors.black,
+                        decoration: TextDecoration.none),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1),
+              )
+    )
+    ),
+    );
+  }
+
+  void _showDetails(BuildContext context, TreeNode node) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(node.name),
+            content: Text(node.description ?? 'No Description'),
+          );
+        }
+    );
   }
 }

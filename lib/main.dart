@@ -52,7 +52,7 @@ class TreeViewApp extends StatelessWidget {
 
             ),
             body: Center(
-                child: MaterialApp(home: TreeOverviewWidget(tree: tree)))));
+                child: TreeOverviewWidget(tree: tree))));
   }
 }
 
