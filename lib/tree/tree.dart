@@ -1,19 +1,20 @@
 import 'dart:collection';
-import 'dart:math';
-import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 enum Priority { low, medium, high }
 
 /// A class representing a task (leaf) or task group (node)
 ///
-/// Each node has a 128 bit [id], [name], a [_completed] state
+/// Can be created three ways:
+///   - TreeNode constructor used for the creation of new leaves
+///   - TreeNode.existingNode used for the recreation of a TreeNode
+///   - TreeNode.comparisonNode creates invalid TreeNode only used for comparisons
 class TreeNode {
   // 128 bit random number so we can ignore collisions
   String id;
   bool _completed = false;
 
-  /// backlink to the Parent for faster lookup
+  /// backlink to the Parent for ease of use
   TreeNode? parent;
 
   /// Name of the task our task group
@@ -34,8 +35,8 @@ class TreeNode {
   int? deleted;
 
   /// Hashset of the Trees children
-  HashSet<TreeNode> children;
-  /// widest part down this subtree needed for the visualisation
+  HashSet<TreeNode> _children;
+  /// number of leaves in the subtree (used by the visualization)
   int leafsInSubTree;
 
   /// Constructor for TreeNodes
@@ -44,7 +45,7 @@ class TreeNode {
   /// a [description] can also be supplied
   TreeNode(this.name, this.priority, [this.description])
       : modified = DateTime.now().microsecondsSinceEpoch,
-        children = HashSet(),
+        _children = HashSet(),
         id = const Uuid().v4(),
         leafsInSubTree = 1;
 
@@ -52,9 +53,10 @@ class TreeNode {
   ///
   /// The immediate children are properly added using addChild
   /// but the grandchildren not
+  /// Children need to be valid
   TreeNode.existingNode(this.id, this.name, this.description, this.priority,
       this._completed, this.modified, this.deleted, Iterable<TreeNode> childTasks)
-      : children = HashSet(),
+      : _children = HashSet(),
         leafsInSubTree = 1 {
     for (var child in childTasks) {
       addChild(child);
@@ -73,7 +75,6 @@ class TreeNode {
       for (var child in json['children']) {
         children.add(TreeNode.fromJson(child));
       }
-      //children = json['children'].map((child) => TreeNode.fromJson(child)).toList();
     }
     return TreeNode.existingNode(
       json['uuid'] as String,
@@ -94,7 +95,7 @@ class TreeNode {
   TreeNode.comparisonNode(this.id)
       : priority = Priority.medium,
         modified = 0,
-        children = HashSet(),
+        _children = HashSet(),
         leafsInSubTree = 1;
 
   // Override == and hashCode in order to store this in a hash set
@@ -107,7 +108,7 @@ class TreeNode {
   @override
   int get hashCode => id.hashCode;
 
-  /// adds TreeNodes to this TreeNode's [children] and set the [parent]
+  /// adds TreeNodes to this TreeNode's [_children] and set the [parent]
   ///
   /// takes a [child]
   /// also updates [leafsInSubTree] in its parent if necessary
@@ -115,8 +116,8 @@ class TreeNode {
   /// return true if successful
   bool addChild(TreeNode child) {
     // if we used to be a leaf we need to take that into account
-    int leafIncrease = (children.isEmpty) ? child.leafsInSubTree - 1 : child.leafsInSubTree;
-    if(!children.add(child)) {
+    int leafIncrease = (_children.isEmpty) ? child.leafsInSubTree - 1 : child.leafsInSubTree;
+    if(!_children.add(child)) {
       return false;
     }
     child.parent = this;
@@ -128,12 +129,15 @@ class TreeNode {
     return true;
   }
 
+  /// update [leafsInSubTree] in the higher levels of the tree
   void updateLeafCount(int incLeafCount) {
     leafsInSubTree += incLeafCount;
     parent?.updateLeafCount(incLeafCount);
   }
 
-  int get numberChildren => children.length;
+  int get numberChildren => _children.length;
+
+  Iterable<TreeNode> get children => _children;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
@@ -163,8 +167,8 @@ class Tree {
   ///
   /// takes a [level]
   ///
-  /// return a hashset containing TreeNodes
-  HashSet<TreeNode> getLevel(int level) {
+  /// return an iterable containing TreeNodes
+  Iterable<TreeNode> getLevel(int level) {
     HashSet<TreeNode> tmp = HashSet();
     // level equals zero so we return the root
     if (level == 0) {
@@ -173,13 +177,13 @@ class Tree {
     }
 
     // Initialize the traversal Queue with the root's children
-    Queue<TreeNode> traversalQueue = Queue.from(root.children);
+    Queue<TreeNode> traversalQueue = Queue.from(root._children);
 
     // Traverse all levels below our target level
     for (var currentLevel = 1; currentLevel < level; currentLevel++) {
       // add all nodes of the next level to the temporary storage
       for (TreeNode currentNode in traversalQueue) {
-        tmp.addAll(currentNode.children);
+        tmp.addAll(currentNode._children);
       }
       traversalQueue.clear();
       // add the nodes of the next level to the traversalQueue
@@ -208,7 +212,7 @@ class Tree {
   bool addChildToNode(String nodeId, TreeNode child) {
     TreeNode? targetNode = findNodeWithId(nodeId);
 
-    if (child.children.isNotEmpty) {
+    if (child._children.isNotEmpty) {
       return false;
     }
 
@@ -224,7 +228,7 @@ class Tree {
   }
 
   void buildTaskSet(TreeNode subtree) {
-    for (var child in subtree.children) {
+    for (var child in subtree._children) {
       buildTaskSet(child);
     }
     _taskSet.add(subtree);

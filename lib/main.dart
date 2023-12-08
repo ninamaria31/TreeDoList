@@ -1,7 +1,5 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'tree/tree_view.dart';
+//import 'tree/tree_view.dart';
 import 'tree/tree_overview.dart';
 import 'tree/tree.dart';
 import 'settings/settings.dart';
