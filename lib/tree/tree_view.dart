@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
+import 'package:snap_scroll_physics/snap_scroll_physics.dart';
+import '../app_constants.dart';
 
 class Constants {
   static const double inter_node_distance = 10.0;
@@ -25,52 +28,48 @@ class _TreeViewState extends State<TreeView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('TreeView Test'),
-      ),
-      body: GestureDetector(
-        onPanUpdate: (details) {
-          setState(() {
-            _scrollController.animateTo
-              (_scrollController.offset + (details.primaryDelta ?? 0),
-                duration: const Duration(microseconds: 100),
-                curve: Curves.linear);
-          });
-        },
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          scrollDirection: Axis.vertical,
-          child: Container(
-            width: 200,
-            child: Column(
-              children: drawLevel(),
-            ),
-          ),
-        ),
-      ),
+    return NodeList(todoTree.root.children.toList());
+  }
+
+
+}
+
+class NodeList extends StatelessWidget {
+  final ScrollController _scrollController;
+  List<TreeNode> _nodes;
+  int selected;
+
+  NodeList(this._nodes, {super.key})
+      : _scrollController = ScrollController(),
+        selected = _nodes.length ~/ 2;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: SnapScrollPhysics.builder(getSnaps),
+      slivers: <Widget>[
+        SliverList(delegate: SliverChildListDelegate(
+            List.generate(_nodes.length, (index) => NodeWidget(node: _nodes[index]))
+        ))
+      ],
     );
   }
 
-  List<Widget>  drawLevel() {
-    List<Widget> nodes = [];
-
-    for (TreeNode node in todoTree.getLevel(1)) {
-      nodes.add(
-        Container(
-          width: 80.0,
-          height: 80.0,
-          margin: const EdgeInsets.all(10.0),
-          color: Colors.blue,
-          child: Center(
-            child: Text(
-              node.name,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ),
-      );
+  List<Snap> getSnaps() {
+    double interNodeDistance = AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight;
+    List<Snap> res = [];
+    for (int i = 0; i < _nodes.length; i++) {
+      res.add(Snap(interNodeDistance*i, distance: interNodeDistance/2));
     }
-    return nodes;
+    return res;
+  }
+
+  List<Widget> _listItems() {
+    return _nodes.map((e) => NodeWidget(node: e)).toList();
+  }
+
+  void update(List<TreeNode> newNodes) {
+    _nodes = newNodes;
   }
 }

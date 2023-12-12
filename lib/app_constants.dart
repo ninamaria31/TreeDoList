@@ -8,6 +8,7 @@ class AppConstants {
   static const double nodeBorderRadius = 8.0;
   static const double nodeFontSize = 16;
 
+  /// padding above and beneath the nodes
   static const double verticalNodePadding = 20.0;
   static const double canvasWidth = nodeWidth;
   static const double connectionLineWidth = nodeLineWidth;

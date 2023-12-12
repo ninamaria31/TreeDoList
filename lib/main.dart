@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-//import 'tree/tree_view.dart';
+import 'tree/tree_view.dart';
 import 'tree/tree_overview.dart';
 import 'tree/tree.dart';
 import 'settings/settings.dart';
 
 void main() {
-  //runApp(TreeViewApp());
+  runApp(TreeTestApp());
+  return;
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     FutureBuilder<Tree>(
@@ -49,10 +50,20 @@ class TreeViewApp extends StatelessWidget {
                   },
                 ),
               ),
-
             ),
-            body: Center(
-                child: TreeOverviewWidget(tree: tree))));
+            body: Center(child: TreeOverviewWidget(tree: tree))));
   }
 }
 
+class TreeTestApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+        home: Scaffold(
+      appBar: AppBar(
+        title: const Text('TreeView Test'),
+      ),
+      body: TreeView(),
+    ));
+  }
+}
