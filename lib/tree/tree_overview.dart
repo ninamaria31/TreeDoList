@@ -19,6 +19,7 @@ Future<Tree> loadExampleJson() async {
 class TreeOverviewWidget extends StatelessWidget {
   final Tree tree;
 
+
   const TreeOverviewWidget({super.key, required this.tree});
 
   @override
@@ -27,11 +28,11 @@ class TreeOverviewWidget extends StatelessWidget {
       constrained: false,
       minScale: 0.1,
       maxScale: 10.0,
-      child: _buildTree(tree.root)
+      child: _buildTree(tree.root, context)
     );
   }
 
-  Widget _buildTree(TreeNode currentNode) {
+  Widget _buildTree(TreeNode currentNode, BuildContext context) {
     return Container(
       // THIS SLIGHTLY INCREASES THE CONTAINER HEIGHT!
       //decoration: BoxDecoration(
@@ -44,7 +45,8 @@ class TreeOverviewWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           NodeWidget(
-              node: currentNode
+              node: currentNode,
+              onTapCallback: _showDetails,
           ),
           if (currentNode.numberChildren > 0) ...[
             SizedBox(
@@ -59,12 +61,25 @@ class TreeOverviewWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: currentNode.children
-                  .map((child) => _buildTree(child))
+                  .map((child) => _buildTree(child, context))
                   .toList(),
             )
           ]
         ],
       ),
+    );
+  }
+
+  //// TODO: create a sufficient details screen
+  void _showDetails(TreeNode node, BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(node.name),
+            content: Text(node.description ?? 'No Description'),
+          );
+        }
     );
   }
 }
@@ -122,13 +137,14 @@ class ConnectionLayerPainter extends CustomPainter {
 /// widget used to draw a node
 class NodeWidget extends StatelessWidget {
   final TreeNode node;
+  final void Function(TreeNode, BuildContext)? onTapCallback;
 
-  const NodeWidget({super.key, required this.node});
+  const NodeWidget({super.key, required this.node, this.onTapCallback});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showDetails(context, node),
+      onTap: () => onTapCallback?.call(node, context),
       child: Padding(
           padding: const EdgeInsets.only(
               top: AppConstants.verticalNodePadding,
@@ -157,15 +173,4 @@ class NodeWidget extends StatelessWidget {
     );
   }
 
-  void _showDetails(BuildContext context, TreeNode node) {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(node.name),
-            content: Text(node.description ?? 'No Description'),
-          );
-        }
-    );
-  }
 }
