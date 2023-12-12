@@ -3,30 +3,24 @@ import '../app_constants.dart';
 import 'package:flutter/material.dart';
 
 class ConnectionLayerPainter extends CustomPainter {
-  final TreeNode node;
+  late TreeNode node;
+  final double bezierStart;
+  late final List<double> bezierEnds;
 
-  ConnectionLayerPainter(this.node);
+  ConnectionLayerPainter(this.bezierStart, this.bezierEnds);
+
+  ConnectionLayerPainter.fromNode(this.node):
+        bezierStart = AppConstants.subTreeHeight(node.leafsInSubTree)/2,
+        bezierEnds = yPositionOfChildren(node);
 
   @override
   void paint(Canvas canvas, Size size) {
-    double canvasHeight = AppConstants.subTreeHeight(node.leafsInSubTree);
-
-
-    double bezierStartHeight = canvasHeight / 2;
-    double cumulativeHeight = 0;
-    double tmp = 0;
-    List<double> bezierEndsHeights = [];
 
     Path curve = Path();
     Offset endControl;
     Offset startControl;
 
-    for (var child in node.children) {
-      tmp = AppConstants.subTreeHeight(child.leafsInSubTree) / 2;
-      cumulativeHeight += tmp;
-      bezierEndsHeights.add(cumulativeHeight);
-      cumulativeHeight += tmp;
-    }
+
 
     Paint paint = Paint()
       ..color = Colors.black
@@ -35,10 +29,10 @@ class ConnectionLayerPainter extends CustomPainter {
       ..strokeCap = StrokeCap.butt;
 
 
-    for (var endPoint in bezierEndsHeights) {
-      endControl = Offset(AppConstants.canvasWidth / 2, bezierStartHeight);
+    for (var endPoint in bezierEnds) {
+      endControl = Offset(AppConstants.canvasWidth / 2, bezierStart);
       startControl = Offset(AppConstants.canvasWidth / 2, endPoint);
-      curve.moveTo(0, bezierStartHeight);
+      curve.moveTo(0, bezierStart);
       curve.cubicTo(endControl.dx, endControl.dy, startControl.dx, startControl.dy, AppConstants.canvasWidth, endPoint);
       canvas.drawPath(curve, paint);
       //canvas.drawLine(Offset(0, bezierStartHeight),
@@ -49,6 +43,21 @@ class ConnectionLayerPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return false;
+  }
+
+  /// generated a list of heights where the nodes are
+  /// for drawing the whole tree. So it won't be evenly spaced
+  static List<double> yPositionOfChildren(TreeNode n) {
+    List<double> res = [];
+    double cumulativeHeight = 0;
+    double tmp = 0;
+    for (var child in n.children) {
+      tmp = AppConstants.subTreeHeight(child.leafsInSubTree) / 2;
+      cumulativeHeight += tmp;
+      res.add(cumulativeHeight);
+      cumulativeHeight += tmp;
+    }
+    return res;
   }
 }
 

@@ -13,6 +13,7 @@ class TreeNode {
   // 128 bit random number so we can ignore collisions
   String id;
   bool _completed = false;
+  DateTime? dueDate;
 
   /// backlink to the Parent for ease of use
   TreeNode? parent;
@@ -43,7 +44,7 @@ class TreeNode {
   ///
   /// takes a [name] and a [priority]
   /// a [description] can also be supplied
-  TreeNode(this.name, this.priority, [this.description])
+  TreeNode(this.name, this.priority, [this.description, this.dueDate])
       : modified = DateTime.now().microsecondsSinceEpoch,
         _children = HashSet(),
         id = const Uuid().v4(),
@@ -55,7 +56,7 @@ class TreeNode {
   /// but the grandchildren not
   /// Children need to be valid
   TreeNode.existingNode(this.id, this.name, this.description, this.priority,
-      this._completed, this.modified, this.deleted, Iterable<TreeNode> childTasks)
+      this._completed, this.modified, this.deleted, this.dueDate, Iterable<TreeNode> childTasks)
       : _children = HashSet(),
         leafsInSubTree = 1 {
     for (var child in childTasks) {
@@ -84,6 +85,7 @@ class TreeNode {
       json['completed'] as bool,
       json['modified'] as int,
       json['modified'] as int?,
+      DateTime.tryParse(json['dueDate'] ?? ''),
       children
     );
   }

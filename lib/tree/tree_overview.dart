@@ -54,7 +54,7 @@ class TreeOverviewWidget extends StatelessWidget {
               width: AppConstants.canvasWidth,
               height: AppConstants.subTreeHeight(currentNode.leafsInSubTree),
               child: CustomPaint(
-                painter: ConnectionLayerPainter(currentNode),
+                painter: ConnectionLayerPainter.fromNode(currentNode),
               ),
             ),
             Column(
@@ -78,7 +78,7 @@ class TreeOverviewWidget extends StatelessWidget {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text(node.name),
-            content: Text(node.description ?? 'No Description'),
+            content: Text('${node.description ?? 'No Description'} due on ${node.dueDate?.toString()}'),
           );
         }
     );

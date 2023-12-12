@@ -4,9 +4,6 @@ import 'tree.dart';
 import 'package:snap_scroll_physics/snap_scroll_physics.dart';
 import '../app_constants.dart';
 
-class Constants {
-  static const double inter_node_distance = 10.0;
-}
 
 class TreeView extends StatefulWidget {
   @override
@@ -28,10 +25,50 @@ class _TreeViewState extends State<TreeView> {
 
   @override
   Widget build(BuildContext context) {
-    return NodeList(todoTree.root.children.toList());
+    return LayoutBuilder(builder: (context, constraints) {
+      return Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        height: MediaQuery.of(context).size.width,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            NodeList([todoTree.root]),
+            CustomPaint(
+                painter: ConnectionLayerPainter(constraints.maxHeight / 2,
+                    yPositionEqualDist(todoTree.root.numberChildren)
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  width: AppConstants.canvasWidth,
+                  height: constraints.maxHeight,
+                ),
+            ),
+            NodeList(todoTree.root.children.toList())
+          ],
+        ),
+      );
+    });
   }
 
+  static List<double> yPositionEqualDist(int numberOfChildren) {
+    List<double> res = [];
 
+    double pos = AppConstants.interNodeDistance / 2;
+    for (int i = 0; i < numberOfChildren; i++){
+      res.add(pos);
+      pos += AppConstants.interNodeDistance;
+    }
+
+    return res;
+  }
 }
 
 class NodeList extends StatelessWidget {
@@ -45,31 +82,38 @@ class NodeList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      controller: _scrollController,
-      physics: SnapScrollPhysics.builder(getSnaps),
-      slivers: <Widget>[
-        SliverList(delegate: SliverChildListDelegate(
-            List.generate(_nodes.length, (index) => NodeWidget(node: _nodes[index]))
-        ))
-      ],
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+            color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      width: AppConstants.nodeWidth,
+      child: CustomScrollView(
+        anchor: 0.5,
+        controller: _scrollController,
+        physics: SnapScrollPhysics.builder(getSnaps),
+        scrollDirection: Axis.vertical,
+        slivers: <Widget>[
+          SliverList(
+              delegate: SliverChildListDelegate(List.generate(
+                  _nodes.length, (index) => NodeWidget(node: _nodes[index]))))
+        ],
+      ),
     );
   }
 
   List<Snap> getSnaps() {
-    double interNodeDistance = AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight;
     List<Snap> res = [];
     for (int i = 0; i < _nodes.length; i++) {
-      res.add(Snap(interNodeDistance*i, distance: interNodeDistance/2));
+      res.add(Snap(AppConstants.interNodeDistance * i,
+          distance: AppConstants.interNodeDistance / 2));
     }
     return res;
-  }
-
-  List<Widget> _listItems() {
-    return _nodes.map((e) => NodeWidget(node: e)).toList();
   }
 
   void update(List<TreeNode> newNodes) {
     _nodes = newNodes;
   }
+
 }

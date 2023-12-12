@@ -6,6 +6,7 @@
     "completed": false,
     "modified": 1678901234,
     "deleted": null,
+    "dueDate": "2024-01-01T00:00:00.000Z",
     "priority": 1,
     "children": [
       {
@@ -15,6 +16,7 @@
         "completed": true,
         "modified": 1678905678,
         "deleted": null,
+        "dueDate": "2024-02-01T00:00:00.000Z",
         "priority": 0,
         "children": [
           {
@@ -24,6 +26,7 @@
             "completed": false,
             "modified": 1678909012,
             "deleted": 1678910000,
+            "dueDate": "2024-03-01T00:00:00.000Z",
             "priority": 2,
             "children": [
               {
@@ -33,6 +36,7 @@
                 "completed": false,
                 "modified": 1678912345,
                 "deleted": null,
+                "dueDate": "2024-04-01T00:00:00.000Z",
                 "priority": 2,
                 "children": []
               },
@@ -43,6 +47,7 @@
                 "completed": false,
                 "modified": 1678912345,
                 "deleted": null,
+                "dueDate": "2024-05-01T00:00:00.000Z",
                 "priority": 0,
                 "children": []
               }
@@ -55,6 +60,7 @@
             "completed": false,
             "modified": 1678912345,
             "deleted": null,
+            "dueDate": "2024-06-01T00:00:00.000Z",
             "priority": 0,
             "children": []
           }
@@ -67,6 +73,7 @@
         "completed": false,
         "modified": 1678912345,
         "deleted": null,
+        "dueDate": "2024-07-01T00:00:00.000Z",
         "priority": 0,
         "children": [
           {
@@ -76,6 +83,7 @@
             "completed": false,
             "modified": 1678912345,
             "deleted": null,
+            "dueDate": "2024-08-01T00:00:00.000Z",
             "priority": 0,
             "children": []
           },
@@ -86,6 +94,7 @@
             "completed": false,
             "modified": 1678912345,
             "deleted": null,
+            "dueDate": "2024-09-01T00:00:00.000Z",
             "priority": 0,
             "children": []
           },
@@ -96,6 +105,7 @@
             "completed": false,
             "modified": 1678912345,
             "deleted": null,
+            "dueDate": "2024-10-01T00:00:00.000Z",
             "priority": 0,
             "children": []
           },
@@ -106,6 +116,7 @@
             "completed": false,
             "modified": 1678912345,
             "deleted": null,
+            "dueDate": null,
             "priority": 0,
             "children": [
               {
@@ -115,6 +126,7 @@
                 "completed": true,
                 "modified": 1678912345,
                 "deleted": null,
+                "dueDate": null,
                 "priority": 0,
                 "children": [
                   {
@@ -124,6 +136,7 @@
                     "completed": false,
                     "modified": 1678912345,
                     "deleted": null,
+                    "dueDate": null,
                     "priority": 1,
                     "children": [
                       {
@@ -133,6 +146,7 @@
                         "completed": false,
                         "modified": 1678912345,
                         "deleted": null,
+                        "dueDate": null,
                         "priority": 2,
                         "children": [
                           {
@@ -142,6 +156,7 @@
                             "completed": false,
                             "modified": 1678912345,
                             "deleted": null,
+                            "dueDate": "2024-11-01T00:00:00.000Z",
                             "priority": 0,
                             "children": [
                               {
@@ -151,6 +166,7 @@
                                 "completed": false,
                                 "modified": 1678912345,
                                 "deleted": null,
+                                "dueDate": "2024-12-01T00:00:00.000Z",
                                 "priority": 1,
                                 "children": []
                               },
@@ -161,6 +177,7 @@
                                 "completed": false,
                                 "modified": 1678912345,
                                 "deleted": null,
+                                "dueDate": null,
                                 "priority": 2,
                                 "children": []
                               }
@@ -179,6 +196,7 @@
                 "completed": false,
                 "modified": 1678912345,
                 "deleted": null,
+                "dueDate": "2025-01-01T00:00:00.000Z",
                 "priority": 1,
                 "children": [
                   {
@@ -188,6 +206,7 @@
                     "completed": false,
                     "modified": 1678912345,
                     "deleted": null,
+                    "dueDate": "2025-02-01T00:00:00.000Z",
                     "priority": 2,
                     "children": []
                   }
@@ -200,6 +219,7 @@
                 "completed": false,
                 "modified": 1678912345,
                 "deleted": null,
+                "dueDate": "2025-03-01T00:00:00.000Z",
                 "priority": 2,
                 "children": [
                   {
@@ -209,6 +229,7 @@
                     "completed": false,
                     "modified": 1678912345,
                     "deleted": null,
+                    "dueDate": "2025-04-01T00:00:00.000Z",
                     "priority": 0,
                     "children": []
                   }
