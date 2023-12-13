@@ -92,24 +92,23 @@ class NodeList extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       width: AppConstants.nodeWidth,
-      child: CustomScrollView(
+      height: (_halves.top.length + 1 + _halves.bottom.length)*(AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight),
+      child: Scrollbar(
         controller: _scrollController,
-        physics: SnapScrollPhysics.builder(getSnaps),
-        scrollDirection: Axis.vertical,
-        slivers: <Widget>[
-          _buildTreeNodesSliver(_halves.top),
-          _buildTreeNodesSliver([_halves.center!]),
-          _buildTreeNodesSliver(_halves.bottom),
-        ],
+        child: ListView(
+          controller: _scrollController,
+          physics: SnapScrollPhysics.builder(getSnaps),
+          scrollDirection: Axis.vertical,
+          children: List.from(
+              _buildTreeNodesListItems(_halves.top))
+              ..addAll(_buildTreeNodesListItems([_halves.center!]))
+              ..addAll(_buildTreeNodesListItems(_halves.bottom))),
       ),
     );
   }
 
-  static SliverList _buildTreeNodesSliver(List<TreeNode> nodes) {
-    return SliverList(
-        delegate:
-    SliverChildListDelegate(List.generate(nodes.length, (index) => NodeWidget(node: nodes[index])))
-    );
+  static List<Widget> _buildTreeNodesListItems(List<TreeNode> nodes) {
+    return nodes.map((n) => NodeWidget(node: n)).toList();
   }
 
   List<Snap> getSnaps() {
