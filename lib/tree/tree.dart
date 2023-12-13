@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:core';
 import 'package:uuid/uuid.dart';
 
 enum Priority { low, medium, high }
@@ -35,18 +36,38 @@ class TreeNode {
   /// (in microseconds since January 1, 1970, 00:00:00 UTC)
   int? deleted;
 
-  /// Hashset of the Trees children
-  HashSet<TreeNode> _children;
+  /// SplayTreeSet of the Trees children (ordering is used by the visualisation)
+  SplayTreeSet<TreeNode> _children;
+
   /// number of leaves in the subtree (used by the visualization)
   int leafsInSubTree;
 
+  static Comparator<TreeNode> treeNodeComparator = (lhs, rhs) {
+    // probably more overhead :/
+    // int res = (lhs.dueDate ?? DateTime(0)).compareTo(rhs.dueDate ?? DateTime(0));
+    // return res == 0 ? lhs.id.compareTo(rhs.id) : res;
+    if (lhs.dueDate == null && rhs.dueDate == null) {
+      return lhs.id.compareTo(rhs.id);
+    }
+    if (lhs.dueDate == null) {
+      return -1;
+    }
+    if (rhs.dueDate == null) {
+      return 1;
+    }
+    int ret = lhs.dueDate!.compareTo(rhs.dueDate!);
+    if (ret == 0) {
+      return lhs.id.compareTo(rhs.id);
+    }
+    return ret;
+  };
   /// Constructor for TreeNodes
   ///
   /// takes a [name] and a [priority]
   /// a [description] can also be supplied
   TreeNode(this.name, this.priority, [this.description, this.dueDate])
       : modified = DateTime.now().microsecondsSinceEpoch,
-        _children = HashSet(),
+        _children = SplayTreeSet(treeNodeComparator),
         id = const Uuid().v4(),
         leafsInSubTree = 1;
 
@@ -55,9 +76,17 @@ class TreeNode {
   /// The immediate children are properly added using addChild
   /// but the grandchildren not
   /// Children need to be valid
-  TreeNode.existingNode(this.id, this.name, this.description, this.priority,
-      this._completed, this.modified, this.deleted, this.dueDate, Iterable<TreeNode> childTasks)
-      : _children = HashSet(),
+  TreeNode.existingNode(
+      this.id,
+      this.name,
+      this.description,
+      this.priority,
+      this._completed,
+      this.modified,
+      this.deleted,
+      this.dueDate,
+      Iterable<TreeNode> childTasks)
+      : _children = SplayTreeSet(treeNodeComparator),
         leafsInSubTree = 1 {
     for (var child in childTasks) {
       addChild(child);
@@ -78,16 +107,15 @@ class TreeNode {
       }
     }
     return TreeNode.existingNode(
-      json['uuid'] as String,
-      json['name'] as String,
-      json['description'] as String?,
-      Priority.values[json['priority'] as int],
-      json['completed'] as bool,
-      json['modified'] as int,
-      json['modified'] as int?,
-      DateTime.tryParse(json['dueDate'] ?? ''),
-      children
-    );
+        json['uuid'] as String,
+        json['name'] as String,
+        json['description'] as String?,
+        Priority.values[json['priority'] as int],
+        json['completed'] as bool,
+        json['modified'] as int,
+        json['modified'] as int?,
+        DateTime.tryParse(json['dueDate'] ?? ''),
+        children);
   }
 
   /// A constructor for creating nodes only used for comparisons
@@ -97,7 +125,7 @@ class TreeNode {
   TreeNode.comparisonNode(this.id)
       : priority = Priority.medium,
         modified = 0,
-        _children = HashSet(),
+        _children = SplayTreeSet(treeNodeComparator),
         leafsInSubTree = 1;
 
   // Override == and hashCode in order to store this in a hash set
@@ -118,8 +146,9 @@ class TreeNode {
   /// return true if successful
   bool addChild(TreeNode child) {
     // if we used to be a leaf we need to take that into account
-    int leafIncrease = (_children.isEmpty) ? child.leafsInSubTree - 1 : child.leafsInSubTree;
-    if(!_children.add(child)) {
+    int leafIncrease =
+        (_children.isEmpty) ? child.leafsInSubTree - 1 : child.leafsInSubTree;
+    if (!_children.add(child)) {
       return false;
     }
     child.parent = this;
@@ -140,6 +169,27 @@ class TreeNode {
   int get numberChildren => _children.length;
 
   Iterable<TreeNode> get children => _children;
+
+  /// return the children split into two balanced halves [TreeNodeLayerHalves.top] is descending
+  /// and [TreeNodeLayerHalves.bottom] is ascending
+  /// used by the regular tree view
+  TreeNodeLayerHalves get halves {
+    TreeNodeLayerHalves res = TreeNodeLayerHalves();
+    res.center = (numberChildren > 0) ? _children.elementAt(0) : null;
+    for (int i = 1; i < numberChildren; i++) {
+      if (i % 2 == 0) {
+        res.top.insert(0, _children.elementAt(i));
+      }
+      res.bottom.add(_children.elementAt(i));
+    }
+    return res;
+  }
+}
+
+class TreeNodeLayerHalves {
+  final List<TreeNode> top = [];
+  final List<TreeNode> bottom = [];
+  TreeNode? center;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'

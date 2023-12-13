@@ -13,6 +13,7 @@ class TreeView extends StatefulWidget {
 class _TreeViewState extends State<TreeView> {
   Tree todoTree = Tree();
   ScrollController _scrollController = ScrollController();
+  late TreeNodeLayerHalves halves;
 
   @override
   void initState() {
@@ -21,6 +22,7 @@ class _TreeViewState extends State<TreeView> {
       String name = 'A$i';
       todoTree.addChildToNode(todoTree.root.id, TreeNode(name, Priority.low));
     }
+    halves = todoTree.root.halves;
   }
 
   @override
@@ -36,7 +38,7 @@ class _TreeViewState extends State<TreeView> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            NodeList([todoTree.root]),
+            NodeList(TreeNodeLayerHalves()..center = todoTree.root),
             CustomPaint(
                 painter: ConnectionLayerPainter(constraints.maxHeight / 2,
                     yPositionEqualDist(todoTree.root.numberChildren)
@@ -51,7 +53,7 @@ class _TreeViewState extends State<TreeView> {
                   height: constraints.maxHeight,
                 ),
             ),
-            NodeList(todoTree.root.children.toList())
+            NodeList(halves)
           ],
         ),
       );
@@ -73,15 +75,16 @@ class _TreeViewState extends State<TreeView> {
 
 class NodeList extends StatelessWidget {
   final ScrollController _scrollController;
-  List<TreeNode> _nodes;
-  int selected;
+  final TreeNodeLayerHalves _halves;
 
-  NodeList(this._nodes, {super.key})
-      : _scrollController = ScrollController(),
-        selected = _nodes.length ~/ 2;
+  NodeList(this._halves, {super.key})
+      : _scrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
+    if (_halves.center == null) {
+      return Container();
+    }
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -90,30 +93,36 @@ class NodeList extends StatelessWidget {
       ),
       width: AppConstants.nodeWidth,
       child: CustomScrollView(
-        anchor: 0.5,
         controller: _scrollController,
         physics: SnapScrollPhysics.builder(getSnaps),
         scrollDirection: Axis.vertical,
         slivers: <Widget>[
-          SliverList(
-              delegate: SliverChildListDelegate(List.generate(
-                  _nodes.length, (index) => NodeWidget(node: _nodes[index]))))
+          _buildTreeNodesSliver(_halves.top),
+          _buildTreeNodesSliver([_halves.center!]),
+          _buildTreeNodesSliver(_halves.bottom),
         ],
       ),
     );
   }
 
+  static SliverList _buildTreeNodesSliver(List<TreeNode> nodes) {
+    return SliverList(
+        delegate:
+    SliverChildListDelegate(List.generate(nodes.length, (index) => NodeWidget(node: nodes[index])))
+    );
+  }
+
   List<Snap> getSnaps() {
     List<Snap> res = [];
-    for (int i = 0; i < _nodes.length; i++) {
+    for (int i = 0; i < _halves.top.length + 1 + _halves.bottom.length; i++) {
       res.add(Snap(AppConstants.interNodeDistance * i,
           distance: AppConstants.interNodeDistance / 2));
     }
     return res;
   }
 
-  void update(List<TreeNode> newNodes) {
-    _nodes = newNodes;
-  }
+  //void update(List<TreeNode> newNodes) {
+  //  _nodes = newNodes;
+  //}
 
 }

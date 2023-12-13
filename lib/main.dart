@@ -5,8 +5,8 @@ import 'tree/tree.dart';
 import 'settings/settings.dart';
 
 void main() {
-  //runApp(TreeTestApp());
-  //return;
+  runApp(TreeTestApp());
+  return;
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     FutureBuilder<Tree>(
