@@ -1,0 +1,127 @@
+{
+  "root": {
+    "uuid": "f3ee111c-92ba-4709-8fb0-89aa52844165",
+    "name": "Root",
+    "description": "This is the root node",
+    "completed": false,
+    "modified": 1678901234,
+    "deleted": null,
+    "priority": 1,
+    "children": [
+      {
+        "uuid": "285dbc73-2b9c-4ebf-8d43-54c76553d4bc",
+        "name": "Kitchen",
+        "description": null,
+        "completed": true,
+        "modified": 1678905678,
+        "deleted": null,
+        "priority": 0,
+        "children": [
+          {
+            "uuid": "d9da9027-0820-4f0e-af9b-03ca716e7182",
+            "name": "Organize",
+            "description": "Description for Child Node 2",
+            "completed": false,
+            "modified": 1678909012,
+            "deleted": 1678910000,
+            "priority": 2,
+            "children": [
+              {
+                "uuid": "7f385b93-ded4-4561-8836-833b1b0ace93",
+                "name": "Sort Shelf",
+                "description": null,
+                "completed": false,
+                "modified": 1678912345,
+                "deleted": null,
+                "priority": 2,
+                "children": []
+              },
+              {
+                "uuid": "b973f93f-90af-46f6-9233-285e822c621f",
+                "name": "Lable Dry Goods Containers",
+                "description": "Don't forget the the containers in the pantry.",
+                "completed": false,
+                "modified": 1678912345,
+                "deleted": null,
+                "priority": 0,
+                "children": []
+              }
+            ]
+          },
+          {
+            "uuid": "7467715f-bf2d-4cab-8306-a3878519be8c",
+            "name": "Clean Sink",
+            "description": null,
+            "completed": false,
+            "modified": 1678912345,
+            "deleted": null,
+            "priority": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "uuid": "a4cb8ebc-b430-491c-8a68-eb36f68f70b0",
+        "name": "Uni",
+        "description": null,
+        "completed": false,
+        "modified": 1678912345,
+        "deleted": null,
+        "priority": 0,
+        "children": [
+          {
+            "uuid": "701f9448-f4b1-4b29-8a9f-93568b7d949d",
+            "name": "Math Homework",
+            "description": null,
+            "completed": false,
+            "modified": 1678912345,
+            "deleted": null,
+            "priority": 0,
+            "children": []
+          },
+          {
+            "uuid": "15d7fb6e-59f2-48e0-81d9-08e94a4359b7",
+            "name": "Start Callender",
+            "description": null,
+            "completed": false,
+            "modified": 1678912345,
+            "deleted": null,
+            "priority": 0,
+            "children": []
+          },
+          {
+            "uuid": "93ad5ebe-ba95-448d-b8cc-da4e89474f1f",
+            "name": "Learn new spanish verbs",
+            "description": null,
+            "completed": false,
+            "modified": 1678912345,
+            "deleted": null,
+            "priority": 0,
+            "children": []
+          },
+          {
+            "uuid": "f76382fb-d390-4310-a4d9-7730f8647232",
+            "name": "Create EAMA App",
+            "description": null,
+            "completed": false,
+            "modified": 1678912345,
+            "deleted": null,
+            "priority": 0,
+            "children": [
+              {
+                "uuid": "fc34a2ae-132a-4576-9dfe-f875d6587fd6",
+                "name": "Learn Dart",
+                "description": null,
+                "completed": true,
+                "modified": 1678912345,
+                "deleted": null,
+                "priority": 0,
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
