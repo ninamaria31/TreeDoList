@@ -171,20 +171,40 @@ class TreeNode {
     parent?.updateLeafCount(incLeafCount);
   }
 
-  int get numberChildren => _children.length;
+  int get numberOfChildren => _children.length;
 
   Iterable<TreeNode> get children => _children;
 
-  /// return the children split into two balanced halves [TreeNodeLayerHalves.top] is descending
-  /// and [TreeNodeLayerHalves.bottom] is ascending
+  /// return the children split into two balanced halves [BitonicSequence.top] is ascending
+  /// and [BitonicSequence.bottom] is descending
   /// used by the regular tree view
-  TreeNodeLayerHalves? get halves => generateHalves(_children);
+  BitonicSequence? get bitonicSiblings => BitonicSequence.fromNode(this);
+}
 
-  static TreeNodeLayerHalves? generateHalves(SplayTreeSet<TreeNode> nodes) {
-    if (nodes.isEmpty) {
-      return null;
+/// A list of TreeNodes split into three parts: a [center], a [top] and [bottom].
+/// [top] UNION {[center]} UNION [bottom] form a bitonic (first ascending then descending) sequence
+class BitonicSequence {
+  final List<TreeNode> top = [];
+  final List<TreeNode> bottom = [];
+  TreeNode? center;
+
+  BitonicSequence([this.center]);
+
+  /// Creates 
+  factory BitonicSequence.fromNode(TreeNode node) {
+    SplayTreeSet<TreeNode> siblings;
+    if (node.parent == null) {
+      return BitonicSequence(node);
     }
-    TreeNodeLayerHalves res = TreeNodeLayerHalves(nodes.elementAt(0));
+    siblings = node.parent!._children;
+    return BitonicSequence.fromIterable(siblings);
+  }
+
+  factory BitonicSequence.fromIterable(Iterable<TreeNode> nodes) {
+    if (nodes.isEmpty) {
+      return BitonicSequence();
+    }
+    BitonicSequence res = BitonicSequence(nodes.first);
     for (int i = 1; i < nodes.length; i++) {
       if (i % 2 == 0) {
         res.top.insert(0, nodes.elementAt(i));
@@ -194,14 +214,6 @@ class TreeNode {
     }
     return res;
   }
-}
-
-class TreeNodeLayerHalves {
-  final List<TreeNode> top = [];
-  final List<TreeNode> bottom = [];
-  TreeNode center;
-
-  TreeNodeLayerHalves(this.center);
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
@@ -286,13 +298,8 @@ class Tree {
     _taskSet.add(subtree);
   }
 
-  // TODO: returns the whole level right now not just the siblings
-  SplayTreeSet<TreeNode> getSiblings(TreeNode node) {
+  SplayTreeSet<TreeNode> getLayerFromNode(TreeNode node) {
     return SplayTreeSet.from(getLevel(node._level), TreeNode.treeNodeComparator);
-  }
-
-  TreeNodeLayerHalves getSiblingsHalves(TreeNode node) {
-    return TreeNode.generateHalves(getSiblings(node)) ?? (throw AssertionError('Bug in getSiblings'));
   }
 
   void buildLevels(TreeNode root) {

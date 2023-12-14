@@ -49,7 +49,7 @@ class TreeOverviewWidget extends StatelessWidget {
               node: currentNode,
               onTapCallback: _showDetails,
           ),
-          if (currentNode.numberChildren > 0) ...[
+          if (currentNode.numberOfChildren > 0) ...[
             SizedBox(
               width: AppConstants.canvasWidth,
               height: AppConstants.subTreeHeight(currentNode.leafsInSubTree),

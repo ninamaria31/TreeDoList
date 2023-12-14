@@ -17,8 +17,8 @@ class TreeView extends StatefulWidget {
 class TreeViewState extends State<TreeView> {
   Tree todoTree;
   TreeNode center;
-  final ScrollController _scrollController = ScrollController();
-  TreeNodeLayerHalves? halves;
+  // final ScrollController _scrollController = ScrollController();
+  late BitonicSequence bitonicChildren;
 
   TreeViewState({required this.todoTree}) : center = todoTree.root;
 
@@ -30,7 +30,7 @@ class TreeViewState extends State<TreeView> {
 
   @override
   Widget build(BuildContext context) {
-    halves = center.halves;
+    bitonicChildren = BitonicSequence.fromIterable(center.children);
     return LayoutBuilder(builder: (context, constraints) {
       return Container(
         //decoration: BoxDecoration(
@@ -42,14 +42,15 @@ class TreeViewState extends State<TreeView> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            NodeList(todoTree.getSiblingsHalves(center), onHorDragEndCallback: onHorDragEndCallbackParent),
+            // just assuming that this is not going to be null seems sketchy but every valid node has valid siblings (they include the center node as well)
+            NodeList(center.bitonicSiblings!, onHorDragEndCallback: onHorDragEndCallbackParent),
             CustomPaint(
               // this looks kind of cursed but it just calculates the common start of the berzier curves as well as the ends
               // TODO: create functions for start and endpoint generation also take into consideration,
               //  that the starting point is not always right in the middle
                 painter: ConnectionLayerPainter(constraints.maxHeight / 2,
-                    yPositionEqualDist(center.numberChildren).map((end) =>
-                    end + (constraints.maxHeight / 2 - center.numberChildren / 2 * AppConstants.interNodeDistance)).toList()
+                    yPositionEqualDist(center.numberOfChildren).map((end) =>
+                    end + (constraints.maxHeight / 2 - center.numberOfChildren / 2 * AppConstants.interNodeDistance)).toList()
                 ),
                 child: Container(
                   //decoration: BoxDecoration(
@@ -61,8 +62,8 @@ class TreeViewState extends State<TreeView> {
                   height: constraints.maxHeight,
                 ),
             ),
-            if(halves != null)
-            NodeList(halves!, onHorDragEndCallback: onHorDragEndCallbackChild)
+            if(bitonicChildren.center != null)
+            NodeList(bitonicChildren, onHorDragEndCallback: onHorDragEndCallbackChild)
           ],
         ),
       );
@@ -99,7 +100,7 @@ class TreeViewState extends State<TreeView> {
 
 class NodeList extends StatelessWidget {
   final ScrollController _scrollController;
-  final TreeNodeLayerHalves _halves;
+  final BitonicSequence _halves;
   final void Function(TreeNode, DragEndDetails)? onHorDragEndCallback;
 
   NodeList(this._halves, {super.key, this.onHorDragEndCallback})
