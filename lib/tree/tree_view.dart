@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
@@ -18,7 +20,6 @@ class TreeViewState extends State<TreeView> {
   Tree todoTree;
   TreeNode center;
   // final ScrollController _scrollController = ScrollController();
-  late BitonicSequence bitonicChildren;
 
   TreeViewState({required this.todoTree}) : center = todoTree.root;
 
@@ -30,8 +31,10 @@ class TreeViewState extends State<TreeView> {
 
   @override
   Widget build(BuildContext context) {
-    bitonicChildren = BitonicSequence.fromIterable(center.children);
+    BitonicSequence bitonicSiblings = BitonicSequence.fromNode(center);
+    BitonicSequence bitonicChildren = BitonicSequence.fromIterable(center.children);
     return LayoutBuilder(builder: (context, constraints) {
+      BezierHeightGenerator bezierHeights = BezierHeightGenerator(bitonicSiblings.length, bitonicChildren.length, forceHeight: constraints.maxHeight);
       return Container(
         //decoration: BoxDecoration(
         //  border: Border.all(
@@ -43,23 +46,22 @@ class TreeViewState extends State<TreeView> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // just assuming that this is not going to be null seems sketchy but every valid node has valid siblings (they include the center node as well)
-            NodeList(center.bitonicSiblings!, onHorDragEndCallback: onHorDragEndCallbackParent),
+            NodeList(bitonicSiblings, onHorDragEndCallback: onHorDragEndCallbackParent),
             CustomPaint(
               // this looks kind of cursed but it just calculates the common start of the berzier curves as well as the ends
               // TODO: create functions for start and endpoint generation also take into consideration,
               //  that the starting point is not always right in the middle
-                painter: ConnectionLayerPainter(constraints.maxHeight / 2,
-                    yPositionEqualDist(center.numberOfChildren).map((end) =>
-                    end + (constraints.maxHeight / 2 - center.numberOfChildren / 2 * AppConstants.interNodeDistance)).toList()
+                painter: ConnectionLayerPainter(bezierHeights.leftBezierHeights[bitonicSiblings.indexOf(center)],
+                  bezierHeights.rightBezierHeights
                 ),
                 child: Container(
-                  //decoration: BoxDecoration(
-                  //  border: Border.all(
-                  //      color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
-                  //  borderRadius: BorderRadius.circular(8),
-                  //),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   width: AppConstants.canvasWidth,
-                  height: constraints.maxHeight,
+                  height: bezierHeights.height,
                 ),
             ),
             if(bitonicChildren.center != null)
@@ -98,6 +100,46 @@ class TreeViewState extends State<TreeView> {
       });
 }
 
+/// Generates the heights where the bezier curves start end end
+class BezierHeightGenerator {
+  final double _leftCanvasHeight;
+  final double _rightCanvasHeight;
+  final int _numberOfChildrenLeft;
+  final int _numberOfChildrenRight;
+
+  late double height;
+  late double _leftCanvasOffset;
+  late double _rightCanvasOffset;
+
+  BezierHeightGenerator(int numberOfNodesLeft, int numberOfNodesRight, {double? forceHeight}) :
+        _numberOfChildrenLeft = numberOfNodesLeft,
+        _numberOfChildrenRight = numberOfNodesRight,
+        _leftCanvasHeight = AppConstants.interNodeDistance * numberOfNodesLeft,
+        _rightCanvasHeight = AppConstants.interNodeDistance * numberOfNodesRight {
+    height = forceHeight ?? max(_leftCanvasHeight, _rightCanvasHeight);
+    _leftCanvasOffset = (_leftCanvasHeight - height).abs() / 2;
+    _rightCanvasOffset = (_rightCanvasHeight - height).abs() / 2;
+  }
+
+  List<double> get leftBezierHeights {
+    return _calcBezierHeights(_leftCanvasOffset, _numberOfChildrenLeft);
+  }
+  List<double> get rightBezierHeights {
+    return _calcBezierHeights(_rightCanvasOffset, _numberOfChildrenRight);
+  }
+  
+  List<double> _calcBezierHeights(double offset, int numberOfChildren) {
+    if (numberOfChildren == 0) {
+      return [];
+    }
+    List<double> result = [offset + AppConstants.verticalNodePadding + AppConstants.nodeHeight / 2];
+    for(int i = 1; i < numberOfChildren; i++) {
+      result.add(result.last + AppConstants.interNodeDistance);
+    }
+    return result;
+  }
+}
+
 class NodeList extends StatelessWidget {
   final ScrollController _scrollController;
   final BitonicSequence _halves;
@@ -118,7 +160,7 @@ class NodeList extends StatelessWidget {
       //  borderRadius: BorderRadius.circular(8),
       //),
       width: AppConstants.nodeWidth,
-      height: (_halves.top.length + 1 + _halves.bottom.length)*(AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight),
+      height: (_halves.length)*(AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight),
       child: ListView(
         controller: _scrollController,
         physics: SnapScrollPhysics.builder(getSnaps),

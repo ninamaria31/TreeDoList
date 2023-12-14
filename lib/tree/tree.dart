@@ -214,6 +214,30 @@ class BitonicSequence {
     }
     return res;
   }
+
+  int get length => top.length + ((center == null) ? 0 : 1) + bottom.length;
+
+  int indexOf(TreeNode node) {
+    int res;
+    //if ((res = top.indexOf(node)) >= 0
+    //    || (res = (center == node) ? top.length : -1) >= 0
+    //    || (res = ((res = bottom.indexOf(node)) >= 0) ? -1 : res + top.length) >= 0 ) {
+    //  return res;
+    //}
+    res = top.indexOf(node);
+    if (res >= 0) {
+      return res;
+    }
+    res = (center == node) ? top.length : -1;
+    if (res >= 0) {
+      return res;
+    }
+    res = bottom.length;
+    if (res >= 0) {
+      return res + top.length;
+    }
+    return -1;
+  }
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
