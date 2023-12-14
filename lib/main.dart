@@ -5,15 +5,13 @@ import 'tree/tree.dart';
 import 'settings/settings.dart';
 
 void main() {
-  runApp(TreeTestApp());
-  return;
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     FutureBuilder<Tree>(
       future: loadExampleJson(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          return TreeViewApp(tree: snapshot.data ?? Tree());
+          return TreeTestApp(todoTree: snapshot.data ?? Tree());//TreeViewApp(tree: snapshot.data ?? Tree());
         } else {
           return const CircularProgressIndicator();
         }
@@ -23,9 +21,9 @@ void main() {
 }
 
 class TreeViewApp extends StatelessWidget {
-  final Tree tree;
+  final Tree todoTree;
 
-  const TreeViewApp({super.key, required this.tree});
+  const TreeViewApp({super.key, required this.todoTree});
 
   @override
   Widget build(BuildContext context) {
@@ -51,11 +49,13 @@ class TreeViewApp extends StatelessWidget {
                 ),
               ),
             ),
-            body: Center(child: TreeOverviewWidget(tree: tree))));
+            body: Center(child: TreeOverviewWidget(tree: todoTree))));
   }
 }
 
 class TreeTestApp extends StatelessWidget {
+  Tree todoTree;
+  TreeTestApp({super.key, required this.todoTree});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -63,7 +63,7 @@ class TreeTestApp extends StatelessWidget {
       appBar: AppBar(
         title: const Text('TreeView Test'),
       ),
-      body: TreeView(),
+      body: TreeView(todoTree: todoTree),
     ));
   }
 }

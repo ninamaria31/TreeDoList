@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
@@ -6,54 +7,62 @@ import '../app_constants.dart';
 
 
 class TreeView extends StatefulWidget {
+  final Tree todoTree;
+  const TreeView({super.key, required this.todoTree});
+
   @override
-  _TreeViewState createState() => _TreeViewState();
+  TreeViewState createState() => TreeViewState(todoTree: todoTree);
 }
 
-class _TreeViewState extends State<TreeView> {
-  Tree todoTree = Tree();
-  ScrollController _scrollController = ScrollController();
-  late TreeNodeLayerHalves halves;
+class TreeViewState extends State<TreeView> {
+  Tree todoTree;
+  TreeNode center;
+  final ScrollController _scrollController = ScrollController();
+  TreeNodeLayerHalves? halves;
+
+  TreeViewState({required this.todoTree}) : center = todoTree.root;
 
   @override
   void initState() {
     super.initState();
-    for (int i = 1; i <= 12; i++) {
-      String name = 'A$i';
-      todoTree.addChildToNode(todoTree.root.id, TreeNode(name, Priority.low));
-    }
-    halves = todoTree.root.halves;
+
   }
 
   @override
   Widget build(BuildContext context) {
+    halves = center.halves;
     return LayoutBuilder(builder: (context, constraints) {
       return Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        height: MediaQuery.of(context).size.width,
+        //decoration: BoxDecoration(
+        //  border: Border.all(
+        //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
+        //  borderRadius: BorderRadius.circular(8),
+        //),
+        height: MediaQuery.of(context).size.height,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            NodeList(TreeNodeLayerHalves()..center = todoTree.root),
+            NodeList(todoTree.getSiblingsHalves(center), onHorDragEndCallback: onHorDragEndCallbackParent),
             CustomPaint(
+              // this looks kind of cursed but it just calculates the common start of the berzier curves as well as the ends
+              // TODO: create functions for start and endpoint generation also take into consideration,
+              //  that the starting point is not always right in the middle
                 painter: ConnectionLayerPainter(constraints.maxHeight / 2,
-                    yPositionEqualDist(todoTree.root.numberChildren)
+                    yPositionEqualDist(center.numberChildren).map((end) =>
+                    end + (constraints.maxHeight / 2 - center.numberChildren / 2 * AppConstants.interNodeDistance)).toList()
                 ),
                 child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                        color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  //decoration: BoxDecoration(
+                  //  border: Border.all(
+                  //      color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
+                  //  borderRadius: BorderRadius.circular(8),
+                  //),
                   width: AppConstants.canvasWidth,
                   height: constraints.maxHeight,
                 ),
             ),
-            NodeList(halves)
+            if(halves != null)
+            NodeList(halves!, onHorDragEndCallback: onHorDragEndCallbackChild)
           ],
         ),
       );
@@ -71,13 +80,29 @@ class _TreeViewState extends State<TreeView> {
 
     return res;
   }
+
+  void onHorDragEndCallbackChild(TreeNode node, DragEndDetails details) =>
+    setState(() {
+      // could check for primary velocity
+      if (details.primaryVelocity != null) {
+        center = node;
+      }
+    });
+
+  void onHorDragEndCallbackParent(TreeNode node, DragEndDetails details) =>
+      setState(() {
+        if (details.primaryVelocity != null && node.parent!= null) {
+          center = node.parent!;
+        }
+      });
 }
 
 class NodeList extends StatelessWidget {
   final ScrollController _scrollController;
   final TreeNodeLayerHalves _halves;
+  final void Function(TreeNode, DragEndDetails)? onHorDragEndCallback;
 
-  NodeList(this._halves, {super.key})
+  NodeList(this._halves, {super.key, this.onHorDragEndCallback})
       : _scrollController = ScrollController();
 
   @override
@@ -86,29 +111,26 @@ class NodeList extends StatelessWidget {
       return Container();
     }
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(
-            color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      //decoration: BoxDecoration(
+      //  border: Border.all(
+      //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+      //  borderRadius: BorderRadius.circular(8),
+      //),
       width: AppConstants.nodeWidth,
       height: (_halves.top.length + 1 + _halves.bottom.length)*(AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight),
-      child: Scrollbar(
+      child: ListView(
         controller: _scrollController,
-        child: ListView(
-          controller: _scrollController,
-          physics: SnapScrollPhysics.builder(getSnaps),
-          scrollDirection: Axis.vertical,
-          children: List.from(
-              _buildTreeNodesListItems(_halves.top))
-              ..addAll(_buildTreeNodesListItems([_halves.center!]))
-              ..addAll(_buildTreeNodesListItems(_halves.bottom))),
-      ),
+        physics: SnapScrollPhysics.builder(getSnaps),
+        scrollDirection: Axis.vertical,
+        children: List.from(
+            _buildTreeNodesListItems(_halves.top))
+            ..addAll(_buildTreeNodesListItems([_halves.center!]))
+            ..addAll(_buildTreeNodesListItems(_halves.bottom))),
     );
   }
 
-  static List<Widget> _buildTreeNodesListItems(List<TreeNode> nodes) {
-    return nodes.map((n) => NodeWidget(node: n)).toList();
+  List<Widget> _buildTreeNodesListItems(List<TreeNode> nodes) {
+    return nodes.map((n) => NodeWidget(node: n, onHorDragEndCallback: onHorDragEndCallback,)).toList();
   }
 
   List<Snap> getSnaps() {
@@ -123,5 +145,4 @@ class NodeList extends StatelessWidget {
   //void update(List<TreeNode> newNodes) {
   //  _nodes = newNodes;
   //}
-
 }

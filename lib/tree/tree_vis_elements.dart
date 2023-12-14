@@ -66,13 +66,16 @@ class NodeWidget extends StatelessWidget {
   final TreeNode node;
   /// Function called when the node is tapped.
   final void Function(TreeNode, BuildContext)? onTapCallback;
+  final void Function(TreeNode, DragEndDetails)? onHorDragEndCallback;
 
-  const NodeWidget({super.key, required this.node, this.onTapCallback});
+
+  const NodeWidget({super.key, required this.node, this.onTapCallback, this.onHorDragEndCallback});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => onTapCallback?.call(node, context),
+      onHorizontalDragEnd: (details) => onHorDragEndCallback?.call(node, details),
       child: Padding(
           padding: const EdgeInsets.only(
               top: AppConstants.verticalNodePadding,
@@ -100,5 +103,7 @@ class NodeWidget extends StatelessWidget {
       ),
     );
   }
+
+
 
 }
