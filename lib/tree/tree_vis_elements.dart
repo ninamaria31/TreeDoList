@@ -73,6 +73,7 @@ class NodeWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Color color = (node.priority == Priority.low) ? Colors.lightGreen.shade200 : (node.priority == Priority.medium) ? Colors.yellow.shade200 : Colors.red.shade200;
     return GestureDetector(
       onTap: () => onTapCallback?.call(node, context),
       onHorizontalDragEnd: (details) => onHorDragEndCallback?.call(node, details),
@@ -84,6 +85,7 @@ class NodeWidget extends StatelessWidget {
               height: AppConstants.nodeHeight,
               width: AppConstants.nodeWidth,
               decoration: BoxDecoration(
+                color: color,
                 border: Border.all(
                     color: Colors.black, width: AppConstants.nodeLineWidth),
                 borderRadius:

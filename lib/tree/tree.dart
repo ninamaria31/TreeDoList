@@ -47,20 +47,23 @@ class TreeNode {
     // probably more overhead :/
     // int res = (lhs.dueDate ?? DateTime(0)).compareTo(rhs.dueDate ?? DateTime(0));
     // return res == 0 ? lhs.id.compareTo(rhs.id) : res;
-    if (lhs.dueDate == null && rhs.dueDate == null) {
-      return lhs.id.compareTo(rhs.id);
-    }
-    if (lhs.dueDate == null) {
-      return -1;
-    }
-    if (rhs.dueDate == null) {
-      return 1;
-    }
-    int ret = lhs.dueDate!.compareTo(rhs.dueDate!);
-    if (ret == 0) {
-      return lhs.id.compareTo(rhs.id);
-    }
-    return ret;
+
+    // comparator for ordering based on dueDate
+    //if (lhs.dueDate == null && rhs.dueDate == null) {
+    //  return lhs.id.compareTo(rhs.id);
+    //}
+    //if (lhs.dueDate == null) {
+    //  return -1;
+    //}
+    //if (rhs.dueDate == null) {
+    //  return 1;
+    //}
+    //int ret = lhs.dueDate!.compareTo(rhs.dueDate!);
+    //if (ret == 0) {
+    //  return lhs.id.compareTo(rhs.id);
+    //}
+    //return ret;
+    return (lhs.priority == rhs.priority) ? lhs.id.compareTo(rhs.id) : lhs.priority.index.compareTo(rhs.priority.index);
   };
   /// Constructor for TreeNodes
   ///
@@ -206,7 +209,7 @@ class BitonicSequence {
     }
     BitonicSequence res = BitonicSequence(nodes.first);
     for (int i = 1; i < nodes.length; i++) {
-      if (i % 2 == 0) {
+      if (i % 2 == 1) {
         res.top.insert(0, nodes.elementAt(i));
       } else {
         res.bottom.add(nodes.elementAt(i));
@@ -237,6 +240,19 @@ class BitonicSequence {
       return res + top.length;
     }
     return -1;
+  }
+
+  TreeNode elementAt(int index) {
+    RangeError.checkNotNegative(index, "index");
+    int topLength = top.length;
+    if (index < topLength) {
+      return top[index];
+    } else if (index == topLength) {
+      return center!;
+    } else if (index <= topLength +  bottom.length){
+      return bottom[index - topLength - 1];
+    }
+    throw IndexError.withLength(index, length);
   }
 }
 
