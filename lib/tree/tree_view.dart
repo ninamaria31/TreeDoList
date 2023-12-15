@@ -233,16 +233,17 @@ class NodeList extends StatelessWidget {
                 controller: _scrollController,
                 physics: SnapScrollPhysics.builder(getSnaps),
                 scrollDirection: Axis.vertical,
-                children: List.from(_buildTreeNodesListItems(items.top))
-                  ..addAll(_buildTreeNodesListItems([items.center!]))
-                  ..addAll(_buildTreeNodesListItems(items.bottom))));
+                children: List.from(_buildTreeNodesListItems(items.top, showLeafCount: true))
+                  ..addAll(_buildTreeNodesListItems([items.center!], showLeafCount: true))
+                  ..addAll(_buildTreeNodesListItems(items.bottom, showLeafCount: true))));
   }
 
-  List<Widget> _buildTreeNodesListItems(List<TreeNode> nodes) {
+  List<Widget> _buildTreeNodesListItems(List<TreeNode> nodes, {bool showLeafCount = false}) {
     return nodes
         .map((n) => NodeWidget(
               node: n,
               onHorDragEndCallback: onHorDragEndCallback,
+              showLeafCount: showLeafCount,
             ))
         .toList();
   }

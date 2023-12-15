@@ -1,8 +1,27 @@
 import 'dart:collection';
 import 'dart:core';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
-enum Priority { low, medium, high }
+enum Priority implements Comparable<Priority> {
+  high,
+  medium,
+  low;
+
+  Color get color {
+   switch (this) {
+     case low:
+       return Colors.lightGreen.shade200;
+     case medium:
+       return Colors.yellow.shade200;
+     case high:
+       return Colors.red.shade200;
+   }
+  }
+
+  @override
+  int compareTo(Priority other) => index.compareTo(other.index);
+}
 
 /// A class representing a task (leaf) or task group (node)
 ///
