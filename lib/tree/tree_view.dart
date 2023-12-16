@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
@@ -37,7 +35,7 @@ class TreeViewState extends State<TreeView> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      BezierHeightGenerator bezierHeights = BezierHeightGenerator(
+      BezierHeights bezierHeights = BezierHeights(
           bitonicSiblings.length, bitonicChildren.length,
           forceHeight: constraints.maxHeight);
       return Container(
@@ -52,17 +50,16 @@ class TreeViewState extends State<TreeView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              // just assuming that this is not going to be null seems sketchy but every valid node has valid siblings (they include the center node as well)
               NodeList(
                   items: bitonicSiblings,
-                  height: bezierHeights.height,
+                  height: constraints.maxHeight,
                   controller: _controller,
                   onChangeCallback: onScrollChangeCallback,
                   onHorDragEndCallback: onHorDragEndCallbackParent),
               CustomPaint(
                 painter: ConnectionLayerPainter(
                     bezierHeights
-                        .rightBezierCenter, //.leftBezierHeights[bitonicSiblings.indexOf(center)],
+                        .lefttBezierCenter, //.leftBezierHeights[bitonicSiblings.indexOf(center)],
                     bezierHeights.rightBezierHeights),
                 child: Container(
                   //decoration: BoxDecoration(
@@ -75,10 +72,10 @@ class TreeViewState extends State<TreeView> {
                   height: bezierHeights.height,
                 ),
               ),
-              if (bitonicChildren.center != null)
+              if (bitonicChildren.isNotEmpty)
                 NodeList(
                     items: bitonicChildren,
-                    height: bezierHeights.height,
+                    height: constraints.maxHeight,
                     onHorDragEndCallback: onHorDragEndCallbackChild),
             ],
           ),
@@ -134,52 +131,7 @@ class TreeViewState extends State<TreeView> {
   }
 }
 
-/// Generates the heights where the bezier curves start end end
-class BezierHeightGenerator {
-  final double _leftCanvasHeight;
-  final double _rightCanvasHeight;
-  final int _numberOfChildrenLeft;
-  final int _numberOfChildrenRight;
 
-  late double height;
-  late double _leftCanvasOffset;
-  late double _rightCanvasOffset;
-
-  BezierHeightGenerator(int numberOfNodesLeft, int numberOfNodesRight,
-      {double? forceHeight})
-      : _numberOfChildrenLeft = numberOfNodesLeft,
-        _numberOfChildrenRight = numberOfNodesRight,
-        _leftCanvasHeight = AppConstants.interNodeDistance * numberOfNodesLeft,
-        _rightCanvasHeight =
-            AppConstants.interNodeDistance * numberOfNodesRight {
-    height = forceHeight ?? max(_leftCanvasHeight, _rightCanvasHeight);
-    _leftCanvasOffset = (_leftCanvasHeight - height).abs() / 2;
-    _rightCanvasOffset = (_rightCanvasHeight - height).abs() / 2;
-  }
-
-  List<double> get leftBezierHeights {
-    return _calcBezierHeights(_leftCanvasOffset, _numberOfChildrenLeft);
-  }
-
-  List<double> get rightBezierHeights {
-    return _calcBezierHeights(_rightCanvasOffset, _numberOfChildrenRight);
-  }
-
-  double get rightBezierCenter => height / 2;
-
-  List<double> _calcBezierHeights(double offset, int numberOfChildren) {
-    if (numberOfChildren == 0) {
-      return [];
-    }
-    List<double> result = [
-      offset + AppConstants.verticalNodePadding + AppConstants.nodeHeight / 2
-    ];
-    for (int i = 1; i < numberOfChildren; i++) {
-      result.add(result.last + AppConstants.interNodeDistance);
-    }
-    return result;
-  }
-}
 
 class NodeList extends StatelessWidget {
   final ScrollController _scrollController;
@@ -200,21 +152,19 @@ class NodeList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.center == null) {
+    if (items.isEmpty) {
       return Container();
     }
     return Container(
-        //decoration: BoxDecoration(
-        //  border: Border.all(
-        //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
-        //  borderRadius: BorderRadius.circular(8),
-        //),
+        decoration: BoxDecoration(
+          border: Border.all(
+              color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+          borderRadius: BorderRadius.circular(8),
+        ),
         width: AppConstants.nodeWidth,
         height: controller != null
             ? height
-            : items.length *
-                (AppConstants.nodeHeight +
-                    2 * AppConstants.verticalNodePadding),
+            : items.length * AppConstants.interNodeDistance,
         child: controller != null
             ? CarouselSlider(
                 options: CarouselOptions(
@@ -226,19 +176,32 @@ class NodeList extends StatelessWidget {
                     onPageChanged: onChangeCallback
                 ),
                 carouselController: controller,
-                items: List.from(_buildTreeNodesListItems(items.top))
-                  ..addAll(_buildTreeNodesListItems([items.center!]))
-                  ..addAll(_buildTreeNodesListItems(items.bottom)))
+                items: List.from(_buildTreeNodesListItems(items.iter)))
             : ListView(
                 controller: _scrollController,
                 physics: SnapScrollPhysics.builder(getSnaps),
                 scrollDirection: Axis.vertical,
-                children: List.from(_buildTreeNodesListItems(items.top, showLeafCount: true))
-                  ..addAll(_buildTreeNodesListItems([items.center!], showLeafCount: true))
-                  ..addAll(_buildTreeNodesListItems(items.bottom, showLeafCount: true))));
+                children: List.from(_buildTreeNodesListItems(items.iter, showLeafCount: true))
+                  // TODO: can this be solved more elegantly? (EDIT: yes if the paddedSize is a multiple of the screen height minus the appbar)
+                  // TLDR: Invisible SizeBox to make sure our scroll offset is a multiple of the paddedNodeHeight
+                  // right now when the height of the screen (minus appbar) is less than the height of our nodes
+                  // (or in other words if scrolling will be enabled) we add an invisible sizebox which
+                  // is has the exact height to make the combined height of our list items (nodes + invisible sizebox)
+                  // equal to the screen height. So even if we scroll all the way to the bottom the bezier curves and
+                  // and the nodes still line up
+                  ..addAll((items.length * AppConstants.interNodeDistance <= height)
+                  ? []
+                  : [Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      height: height % AppConstants.interNodeDistance)
+                  ])));
   }
 
-  List<Widget> _buildTreeNodesListItems(List<TreeNode> nodes, {bool showLeafCount = false}) {
+  List<Widget> _buildTreeNodesListItems(Iterable<TreeNode> nodes, {bool showLeafCount = false}) {
     return nodes
         .map((n) => NodeWidget(
               node: n,
@@ -250,7 +213,7 @@ class NodeList extends StatelessWidget {
 
   List<Snap> getSnaps() {
     List<Snap> res = [];
-    for (int i = 0; i < items.top.length + 1 + items.bottom.length; i++) {
+    for (int i = 0; i < items.length + 1; i++) {
       res.add(Snap(AppConstants.interNodeDistance * i,
           distance: AppConstants.interNodeDistance / 2));
     }

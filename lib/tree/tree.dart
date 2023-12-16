@@ -205,14 +205,13 @@ class TreeNode {
 
 /// A list of TreeNodes split into three parts: a [center], a [top] and [bottom].
 /// [top] UNION {[center]} UNION [bottom] form a bitonic (first ascending then descending) sequence
-class BitonicSequence {
-  final List<TreeNode> top = [];
-  final List<TreeNode> bottom = [];
-  TreeNode? center;
+class BitonicSequence with ListMixin<TreeNode> {
+  final List<TreeNode> _store = [];
 
-  BitonicSequence([this.center]);
+  BitonicSequence([TreeNode? center]) {
+    if (center != null) _store.add(center);
+  }
 
-  /// Creates 
   factory BitonicSequence.fromNode(TreeNode node) {
     SplayTreeSet<TreeNode> siblings;
     if (node.parent == null) {
@@ -223,56 +222,38 @@ class BitonicSequence {
   }
 
   factory BitonicSequence.fromIterable(Iterable<TreeNode> nodes) {
-    if (nodes.isEmpty) {
-      return BitonicSequence();
-    }
-    BitonicSequence res = BitonicSequence(nodes.first);
-    for (int i = 1; i < nodes.length; i++) {
-      if (i % 2 == 1) {
-        res.top.insert(0, nodes.elementAt(i));
-      } else {
-        res.bottom.add(nodes.elementAt(i));
-      }
+    BitonicSequence res = BitonicSequence();
+    for (TreeNode node in nodes) {
+      (res._store.length % 2 == 1) ? res._store.insert(0, node) : res._store.add(node);
     }
     return res;
   }
 
-  int get length => top.length + ((center == null) ? 0 : 1) + bottom.length;
+  @override
+  int get length => _store.length;
 
-  int indexOf(TreeNode node) {
-    int res;
-    //if ((res = top.indexOf(node)) >= 0
-    //    || (res = (center == node) ? top.length : -1) >= 0
-    //    || (res = ((res = bottom.indexOf(node)) >= 0) ? -1 : res + top.length) >= 0 ) {
-    //  return res;
-    //}
-    res = top.indexOf(node);
-    if (res >= 0) {
-      return res;
-    }
-    res = (center == node) ? top.length : -1;
-    if (res >= 0) {
-      return res;
-    }
-    res = bottom.length;
-    if (res >= 0) {
-      return res + top.length;
-    }
-    return -1;
+  @override
+  TreeNode operator [](int index) {
+    return _store[index];
   }
 
-  TreeNode elementAt(int index) {
-    RangeError.checkNotNegative(index, "index");
-    int topLength = top.length;
-    if (index < topLength) {
-      return top[index];
-    } else if (index == topLength) {
-      return center!;
-    } else if (index <= topLength +  bottom.length){
-      return bottom[index - topLength - 1];
-    }
-    throw IndexError.withLength(index, length);
+  @override
+  void operator []=(int index, TreeNode value) {
+    throw UnsupportedError("The bitonicSequence is read only!");
   }
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError("The bitonicSequence is read only!");
+  }
+
+  @override
+  bool get isEmpty => _store.isEmpty;
+
+  @override
+  bool get isNotEmpty => _store.isNotEmpty;
+
+  Iterable<TreeNode> get iter => _store;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'

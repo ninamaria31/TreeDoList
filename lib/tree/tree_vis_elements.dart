@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'tree.dart';
 import '../app_constants.dart';
 import 'package:flutter/material.dart';
@@ -133,5 +135,52 @@ class NodeWidget extends StatelessWidget {
             ),
           ),
         ));
+  }
+}
+
+/// Generates the heights where the bezier curves start end end
+class BezierHeights {
+  final double _leftCanvasHeight;
+  final double _rightCanvasHeight;
+  final int _numberOfChildrenLeft;
+  final int _numberOfChildrenRight;
+
+  late double height;
+  late double _leftCanvasOffset;
+  late double _rightCanvasOffset;
+
+  BezierHeights(int numberOfNodesLeft, int numberOfNodesRight,
+      {double? forceHeight})
+      : _numberOfChildrenLeft = numberOfNodesLeft,
+        _numberOfChildrenRight = numberOfNodesRight,
+        _leftCanvasHeight = AppConstants.interNodeDistance * numberOfNodesLeft,
+        _rightCanvasHeight =
+            AppConstants.interNodeDistance * numberOfNodesRight {
+    height = max(forceHeight ?? 0, max(_leftCanvasHeight, _rightCanvasHeight));
+    _leftCanvasOffset = (_leftCanvasHeight - height).abs() / 2;
+    _rightCanvasOffset = (_rightCanvasHeight - height).abs() / 2;
+  }
+
+  List<double> get leftBezierHeights {
+    return _calcBezierHeights(_leftCanvasOffset, _numberOfChildrenLeft);
+  }
+
+  List<double> get rightBezierHeights {
+    return _calcBezierHeights(_rightCanvasOffset, _numberOfChildrenRight);
+  }
+
+  double get lefttBezierCenter => height / 2;
+
+  List<double> _calcBezierHeights(double offset, int numberOfChildren) {
+    if (numberOfChildren == 0) {
+      return [];
+    }
+    List<double> result = [
+      offset + AppConstants.verticalNodePadding + AppConstants.nodeHeight / 2
+    ];
+    for (int i = 1; i < numberOfChildren; i++) {
+      result.add(result.last + AppConstants.interNodeDistance);
+    }
+    return result;
   }
 }

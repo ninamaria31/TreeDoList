@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// TODO: Could also be dynamically generated based on device data like screen size dpi etc
 class AppConstants {
-  static const double nodeWidth = 125.0;
+  static const double nodeWidth = 120.0;
   static const double nodeHeight = 50.0;
   static const double nodeLineWidth = 2.0;
   static const double nodeBorderRadius = 8.0;
@@ -23,7 +23,7 @@ class AppConstants {
 
 
 
-  static const double canvasWidth = nodeWidth;
+  static const double canvasWidth = nodeWidth * 0.75;
   static const double connectionLineWidth = nodeLineWidth;
   static const double interNodeDistance =
       AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight;
