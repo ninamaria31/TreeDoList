@@ -21,12 +21,12 @@ class AppConstants {
   static const double verticalNodePadding = 20.0;
   static const double endPadding = nodeBadeSize/2;
 
-
-
-  static const double canvasWidth = nodeWidth * 0.75;
+  static const double canvasWidth = nodeWidth * 0.9;
   static const double connectionLineWidth = nodeLineWidth;
   static const double interNodeDistance =
       AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight;
+  // just for better readability
+  static const double paddedNodeHeight = interNodeDistance;
 
   /// its just the height after which the first bezier curve ends
   static double interConnectionDistance(int numberChildren, double height) =>

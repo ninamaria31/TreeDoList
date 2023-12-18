@@ -1,64 +1,6 @@
-import 'dart:math';
-
 import 'tree.dart';
 import '../app_constants.dart';
 import 'package:flutter/material.dart';
-
-class ConnectionLayerPainter extends CustomPainter {
-  late TreeNode node;
-  final double bezierStart;
-  late final List<double> bezierEnds;
-
-  ConnectionLayerPainter(this.bezierStart, this.bezierEnds);
-
-  ConnectionLayerPainter.fromNode(this.node)
-      : bezierStart = AppConstants.subTreeHeight(node.leafsInSubTree) / 2,
-        bezierEnds = yPositionOfChildren(node);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Path curve = Path();
-    Offset endControl;
-    Offset startControl;
-
-    Paint paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = AppConstants.connectionLineWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt;
-
-    for (var endPoint in bezierEnds) {
-      endControl = Offset(AppConstants.canvasWidth / 2, bezierStart);
-      startControl = Offset(AppConstants.canvasWidth / 2, endPoint);
-      curve.moveTo(0, bezierStart);
-      curve.cubicTo(endControl.dx, endControl.dy, startControl.dx,
-          startControl.dy, AppConstants.canvasWidth, endPoint);
-      canvas.drawPath(curve, paint);
-      //canvas.drawLine(Offset(0, bezierStartHeight),
-      //    Offset(AppConstants.canvasWidth, endPoint), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
-
-  /// generated a list of heights where the nodes are
-  /// for drawing the whole tree. So it won't be evenly spaced
-  static List<double> yPositionOfChildren(TreeNode n) {
-    List<double> res = [];
-    double cumulativeHeight = 0;
-    double tmp = 0;
-    for (var child in n.children) {
-      tmp = AppConstants.subTreeHeight(child.leafsInSubTree) / 2;
-      cumulativeHeight += tmp;
-      res.add(cumulativeHeight);
-      cumulativeHeight += tmp;
-    }
-    return res;
-  }
-}
 
 /// widget used to draw a node
 class NodeWidget extends StatelessWidget {
@@ -96,20 +38,27 @@ class NodeWidget extends StatelessWidget {
                       right: AppConstants.endPadding),
                   child: _buildNode()),
               if (node.numberOfChildren != 0)
-              Positioned(
-                right: AppConstants.endPadding - AppConstants.nodeBadeSize / 2,
-                top: AppConstants.verticalNodePadding - AppConstants.nodeBadeSize / 2,
-                width: AppConstants.nodeBadeSize,
-                height: AppConstants.nodeBadeSize,
-                child: Container(
-                    decoration: BoxDecoration(
-                        color: node.priority.color,
-                        border: Border.all(
-                            color: Colors.black,
-                            width: AppConstants.nodeLineWidth),
-                        borderRadius: BorderRadius.circular(AppConstants.nodeBadeSize / 2)),
-                    child: Center(child: Text(node.leafsInSubTree.toString(), style: AppConstants.nodeTextStyle,))),
-              )
+                Positioned(
+                  right:
+                      AppConstants.endPadding - AppConstants.nodeBadeSize / 2,
+                  top: AppConstants.verticalNodePadding -
+                      AppConstants.nodeBadeSize / 2,
+                  width: AppConstants.nodeBadeSize,
+                  height: AppConstants.nodeBadeSize,
+                  child: Container(
+                      decoration: BoxDecoration(
+                          color: node.priority.color,
+                          border: Border.all(
+                              color: Colors.black,
+                              width: AppConstants.nodeLineWidth),
+                          borderRadius: BorderRadius.circular(
+                              AppConstants.nodeBadeSize / 2)),
+                      child: Center(
+                          child: Text(
+                        node.leafsInSubTree.toString(),
+                        style: AppConstants.nodeTextStyle,
+                      ))),
+                )
             ]),
     );
   }
@@ -138,49 +87,66 @@ class NodeWidget extends StatelessWidget {
   }
 }
 
-/// Generates the heights where the bezier curves start end end
-class BezierHeights {
-  final double _leftCanvasHeight;
-  final double _rightCanvasHeight;
-  final int _numberOfChildrenLeft;
-  final int _numberOfChildrenRight;
+class ConnectionLayerPainter extends CustomPainter {
+  final double bezierStart;
+  late final List<double> bezierEnds;
+  double width;
 
-  late double height;
-  late double _leftCanvasOffset;
-  late double _rightCanvasOffset;
+  final double? startXOffset;
 
-  BezierHeights(int numberOfNodesLeft, int numberOfNodesRight,
-      {double? forceHeight})
-      : _numberOfChildrenLeft = numberOfNodesLeft,
-        _numberOfChildrenRight = numberOfNodesRight,
-        _leftCanvasHeight = AppConstants.interNodeDistance * numberOfNodesLeft,
-        _rightCanvasHeight =
-            AppConstants.interNodeDistance * numberOfNodesRight {
-    height = max(forceHeight ?? 0, max(_leftCanvasHeight, _rightCanvasHeight));
-    _leftCanvasOffset = (_leftCanvasHeight - height).abs() / 2;
-    _rightCanvasOffset = (_rightCanvasHeight - height).abs() / 2;
-  }
+  ConnectionLayerPainter(
+      {required Listenable repaint,
+      required this.bezierStart,
+      required this.bezierEnds,
+      this.width = AppConstants.canvasWidth,
+      this.startXOffset}) : super(repaint: repaint);
 
-  List<double> get leftBezierHeights {
-    return _calcBezierHeights(_leftCanvasOffset, _numberOfChildrenLeft);
-  }
+  ConnectionLayerPainter.fromNode(TreeNode node,
+      {this.startXOffset, this.width = AppConstants.canvasWidth})
+      : bezierStart = AppConstants.subTreeHeight(node.leafsInSubTree) / 2,
+        bezierEnds = yPositionOfChildren(node);
 
-  List<double> get rightBezierHeights {
-    return _calcBezierHeights(_rightCanvasOffset, _numberOfChildrenRight);
-  }
+  @override
+  void paint(Canvas canvas, Size size) {
+    Path curve = Path();
+    Offset endControl;
+    Offset startControl;
 
-  double get lefttBezierCenter => height / 2;
+    Paint paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = AppConstants.connectionLineWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
 
-  List<double> _calcBezierHeights(double offset, int numberOfChildren) {
-    if (numberOfChildren == 0) {
-      return [];
+    for (var endPoint in bezierEnds) {
+      endControl = Offset(width / 2, bezierStart);
+      startControl = Offset(width / 2, endPoint);
+      curve.moveTo(0 + (startXOffset ?? 0), bezierStart);
+      curve.cubicTo(endControl.dx, endControl.dy, startControl.dx,
+          startControl.dy, width, endPoint);
+      canvas.drawPath(curve, paint);
+      //canvas.drawLine(Offset(0, bezierStartHeight),
+      //    Offset(AppConstants.canvasWidth, endPoint), paint);
     }
-    List<double> result = [
-      offset + AppConstants.verticalNodePadding + AppConstants.nodeHeight / 2
-    ];
-    for (int i = 1; i < numberOfChildren; i++) {
-      result.add(result.last + AppConstants.interNodeDistance);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+
+  /// generated a list of heights where the nodes are
+  /// for drawing the whole tree. So it won't be evenly spaced
+  static List<double> yPositionOfChildren(TreeNode n) {
+    List<double> res = [];
+    double cumulativeHeight = 0;
+    double tmp = 0;
+    for (var child in n.children) {
+      tmp = AppConstants.subTreeHeight(child.leafsInSubTree) / 2;
+      cumulativeHeight += tmp;
+      res.add(cumulativeHeight);
+      cumulativeHeight += tmp;
     }
-    return result;
+    return res;
   }
 }
