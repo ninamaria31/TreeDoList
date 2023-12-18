@@ -26,7 +26,8 @@ class TreeViewState extends State<TreeView> {
   BitonicSequence bitonicChildren;
 
   // https://stackoverflow.com/questions/66327785/flutter-how-to-notify-custompainter-to-redraw
-  final _counter = ValueNotifier<int>(0);
+  final _index = ValueNotifier<int>(0);
+
 
   TreeViewState({required this.todoTree})
       : center = todoTree.root,
@@ -57,9 +58,9 @@ class TreeViewState extends State<TreeView> {
                 shaderCallback: (bounds) => const LinearGradient(colors: [Colors.transparent, Colors.black]).createShader(bounds),
                 child: CustomPaint(
                   painter: ConnectionLayerPainter(
-                      repaint: _counter,
+                      repaint: _index,
                       bezierStart: constraints.maxHeight / 2,
-                      bezierEnds: NodeListCarousel.getBezierHeights(bitonicSiblings.length, _controller.index, constraints.maxHeight),
+                      bezierEnds: NodeListCarousel.getBezierHeights(bitonicSiblings.length, _index.value, constraints.maxHeight),
                       width: AppConstants.canvasWidth * 0.22),
                   child: Container(
                     //decoration: BoxDecoration(
@@ -81,7 +82,6 @@ class TreeViewState extends State<TreeView> {
                   onHorDragEndCallback: onHorDragEndCallbackParent),
               CustomPaint(
                 painter: ConnectionLayerPainter(
-                    repaint: _counter,
                     bezierStart: constraints.maxHeight / 2,
                     // TODO: Still not working: put the index into the Listenable and use that index in the build()
                     bezierEnds:  NodeListView.getBezierHeights(bitonicChildren.length, constraints.maxHeight)),
@@ -131,15 +131,15 @@ class TreeViewState extends State<TreeView> {
 
   void newCenter(TreeNode newCenter) {
     center = newCenter;
-    _counter.value++;
     bitonicSiblings = BitonicSequence.fromNode(center);
     bitonicChildren = BitonicSequence.fromIterable(center.children);
-    _controller.jumpToPage(bitonicSiblings.indexOf(center));
+    _index.value = bitonicSiblings.indexOf(center);
+    _controller.jumpToPage(_index.value);
   }
 
   void shiftCenter(TreeNode sCenter) {
     center = sCenter;
-    _counter.value++;
+    _index.value = bitonicSiblings.indexOf(center);
     bitonicChildren = BitonicSequence.fromIterable(center.children);
   }
 }

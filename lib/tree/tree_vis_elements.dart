@@ -95,14 +95,14 @@ class ConnectionLayerPainter extends CustomPainter {
   final double? startXOffset;
 
   ConnectionLayerPainter(
-      {required Listenable repaint,
+      {super.repaint,
       required this.bezierStart,
       required this.bezierEnds,
       this.width = AppConstants.canvasWidth,
-      this.startXOffset}) : super(repaint: repaint);
+      this.startXOffset});
 
   ConnectionLayerPainter.fromNode(TreeNode node,
-      {this.startXOffset, this.width = AppConstants.canvasWidth})
+      {this.startXOffset, this.width = AppConstants.canvasWidth, super.repaint})
       : bezierStart = AppConstants.subTreeHeight(node.leafsInSubTree) / 2,
         bezierEnds = yPositionOfChildren(node);
 
