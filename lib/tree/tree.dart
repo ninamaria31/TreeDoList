@@ -206,6 +206,7 @@ class TreeNode {
 /// A list of TreeNodes split into three parts: a [center], a [top] and [bottom].
 /// [top] UNION {[center]} UNION [bottom] form a bitonic (first ascending then descending) sequence
 class BitonicSequence with ListMixin<TreeNode> {
+  // can use the add implementation provided by the ListMixin since it only works on nullable types
   final List<TreeNode> _store = [];
 
   BitonicSequence([TreeNode? center]) {
@@ -254,6 +255,9 @@ class BitonicSequence with ListMixin<TreeNode> {
   bool get isNotEmpty => _store.isNotEmpty;
 
   Iterable<TreeNode> get iter => _store;
+
+  @override
+  int indexOf(Object? element, [int start = 0]) => (element is TreeNode) ? _store.indexOf(element, start) : -1;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
