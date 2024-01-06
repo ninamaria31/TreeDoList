@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'connection_layer.dart';
 import 'tree.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
@@ -54,7 +55,7 @@ class TreeOverviewWidget extends StatelessWidget {
               width: AppConstants.canvasWidth,
               height: AppConstants.subTreeHeight(currentNode.leafsInSubTree),
               child: CustomPaint(
-                painter: ConnectionLayerPainter.fromNode(currentNode),
+                painter: RegularConnectionLayerPainter.fromNode(currentNode),
               ),
             ),
             Column(

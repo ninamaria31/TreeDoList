@@ -27,6 +27,7 @@ class AppConstants {
       AppConstants.verticalNodePadding * 2 + AppConstants.nodeHeight;
   // just for better readability
   static const double paddedNodeHeight = interNodeDistance;
+  static const double paddedNodeCenter = paddedNodeHeight/2;
 
   /// its just the height after which the first bezier curve ends
   static double interConnectionDistance(int numberChildren, double height) =>

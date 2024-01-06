@@ -3,20 +3,22 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../app_constants.dart';
+
 enum Priority implements Comparable<Priority> {
   high,
   medium,
   low;
 
   Color get color {
-   switch (this) {
-     case low:
-       return Colors.lightGreen.shade200;
-     case medium:
-       return Colors.yellow.shade200;
-     case high:
-       return Colors.red.shade200;
-   }
+    switch (this) {
+      case low:
+        return Colors.lightGreen.shade200;
+      case medium:
+        return Colors.yellow.shade200;
+      case high:
+        return Colors.red.shade200;
+    }
   }
 
   @override
@@ -82,8 +84,11 @@ class TreeNode {
     //  return lhs.id.compareTo(rhs.id);
     //}
     //return ret;
-    return (lhs.priority == rhs.priority) ? lhs.id.compareTo(rhs.id) : lhs.priority.index.compareTo(rhs.priority.index);
+    return (lhs.priority == rhs.priority)
+        ? lhs.id.compareTo(rhs.id)
+        : lhs.priority.index.compareTo(rhs.priority.index);
   };
+
   /// Constructor for TreeNodes
   ///
   /// takes a [name] and a [priority]
@@ -112,7 +117,7 @@ class TreeNode {
       Iterable<TreeNode> childTasks)
       : _children = SplayTreeSet(treeNodeComparator),
         leafsInSubTree = 1,
-        _level = 0{
+        _level = 0 {
     for (var child in childTasks) {
       addChild(child);
     }
@@ -197,16 +202,14 @@ class TreeNode {
 
   Iterable<TreeNode> get children => _children;
 
-  /// return the children split into two balanced halves [BitonicSequence.top] is ascending
-  /// and [BitonicSequence.bottom] is descending
-  /// used by the regular tree view
+  /// return a BitonicSequence of the children
   BitonicSequence? get bitonicSiblings => BitonicSequence.fromNode(this);
 }
 
-/// A list of TreeNodes split into three parts: a [center], a [top] and [bottom].
-/// [top] UNION {[center]} UNION [bottom] form a bitonic (first ascending then descending) sequence
+/// A sequence which ascends first and then descends
+/// used in the visualization so the most important tasks are in the middle of the list
 class BitonicSequence with ListMixin<TreeNode> {
-  // can use the add implementation provided by the ListMixin since it only works on nullable types
+  // can't use the add implementation provided by the ListMixin since it only works on nullable types
   final List<TreeNode> _store = [];
 
   BitonicSequence([TreeNode? center]) {
@@ -225,7 +228,9 @@ class BitonicSequence with ListMixin<TreeNode> {
   factory BitonicSequence.fromIterable(Iterable<TreeNode> nodes) {
     BitonicSequence res = BitonicSequence();
     for (TreeNode node in nodes) {
-      (res._store.length % 2 == 1) ? res._store.insert(0, node) : res._store.add(node);
+      (res._store.length % 2 == 1)
+          ? res._store.insert(0, node)
+          : res._store.add(node);
     }
     return res;
   }
@@ -257,7 +262,28 @@ class BitonicSequence with ListMixin<TreeNode> {
   Iterable<TreeNode> get iter => _store;
 
   @override
-  int indexOf(Object? element, [int start = 0]) => (element is TreeNode) ? _store.indexOf(element, start) : -1;
+  int indexOf(Object? element, [int start = 0]) =>
+      (element is TreeNode) ? _store.indexOf(element, start) : -1;
+
+  // override add and addAll because the mixin default implementation
+  // is not very efficient, so just forward it to the _store
+  @override
+  void add(TreeNode element) {
+    _store.add(element);
+  }
+
+  @override
+  void addAll(Iterable<TreeNode> iterable) {
+    _store.addAll(iterable);
+  }
+
+  /// return a list of heights we the center of the nodes are starting at the height of the center of the first node
+  List<double> get equallyDistributedHeights => [
+        for (int i = length - 1; i >= 0; i--)
+          AppConstants.paddedNodeCenter + AppConstants.paddedNodeHeight * i
+      ];
+
+  double get height => length * AppConstants.paddedNodeHeight;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
@@ -272,15 +298,19 @@ class Tree {
   late final Map<int, List<TreeNode>> _layers;
 
   /// Constructor for a new Tree
-  Tree() : root = TreeNode('Root', Priority.medium){
-    _layers = {0: [root]};
+  Tree() : root = TreeNode('Root', Priority.medium) {
+    _layers = {
+      0: [root]
+    };
     _taskSet.add(root);
   }
 
   /// Constructs new tree from a root TreeNode
   /// Tree needs to be valid (correct parent etc)
   Tree.fromRootNode(this.root) {
-    _layers = {0: [root]};
+    _layers = {
+      0: [root]
+    };
     buildTaskSet(root);
     buildLevels(root);
   }
@@ -327,7 +357,7 @@ class Tree {
       return false;
     }
 
-    if(_layers[targetNode._level] == null){
+    if (_layers[targetNode._level] == null) {
       _layers[targetNode._level] = [child];
     } else {
       _layers[targetNode._level]?.add(child);
@@ -343,7 +373,8 @@ class Tree {
   }
 
   SplayTreeSet<TreeNode> getLayerFromNode(TreeNode node) {
-    return SplayTreeSet.from(getLevel(node._level), TreeNode.treeNodeComparator);
+    return SplayTreeSet.from(
+        getLevel(node._level), TreeNode.treeNodeComparator);
   }
 
   void buildLevels(TreeNode root) {
