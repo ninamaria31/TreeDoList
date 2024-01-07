@@ -42,7 +42,7 @@ class TreeViewState extends State<TreeView> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      return Container(
+      return SizedBox(
         //decoration: BoxDecoration(
         //  border: Border.all(
         //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
@@ -62,7 +62,7 @@ class TreeViewState extends State<TreeView> {
                       connection: Connection(0, bitonicSiblings.equallyDistributedHeights),
                       height: constraints.maxHeight,
                       width: AppConstants.canvasWidth * 0.22,),
-                  child: Container(
+                  child: SizedBox(
                     //decoration: BoxDecoration(
                     //  border: Border.all(
                     //      color: Colors.lightBlue,
@@ -86,7 +86,7 @@ class TreeViewState extends State<TreeView> {
                     connection: Connection(0, bitonicChildren.equallyDistributedHeights),
                     height: constraints.maxHeight
                 ),
-                child: Container(
+                child: SizedBox(
                   //decoration: BoxDecoration(
                   //  border: Border.all(
                   //      color: Colors.lightBlue,
@@ -190,7 +190,7 @@ class NodeListCarousel extends NodeList {
     if (items.isEmpty) {
       return Container();
     }
-    return Container(
+    return SizedBox(
         //decoration: BoxDecoration(
         //  border: Border.all(
         //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
@@ -223,7 +223,7 @@ class NodeListRegular extends NodeList {
     if (items.isEmpty) {
       return Container();
     }
-    return Container(
+    return SizedBox(
         //decoration: BoxDecoration(
         //  border: Border.all(
         //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),

@@ -49,7 +49,7 @@ class NodeWidget extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: node.priority.color,
                           border: Border.all(
-                              color: Colors.black,
+                              color: const Color.fromARGB(255, 0, 0, 0),
                               width: AppConstants.nodeLineWidth),
                           borderRadius: BorderRadius.circular(
                               AppConstants.nodeBadeSize / 2)),
@@ -86,4 +86,3 @@ class NodeWidget extends StatelessWidget {
         ));
   }
 }
-
