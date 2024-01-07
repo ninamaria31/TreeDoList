@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tree_do/auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -139,6 +140,19 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _googleSignInButton() {
+    return IconButton(
+      icon: SvgPicture.asset('assets/buttons/google_si/svg/neutral/android_neutral_rd_SI.svg', height: 40.0),
+      onPressed: () async {
+        try {
+          await Auth().signInWithGoogle();
+        } catch (e) {
+          showErrorDialog(e.toString());
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,6 +172,7 @@ class _LoginPageState extends State<LoginPage> {
               _errorMessage(),
               _submitButton(),
               _loginOrRegisterButton(),
+              _googleSignInButton(),
             ],
           ),
         ));
