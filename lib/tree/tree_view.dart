@@ -16,6 +16,7 @@ class TreeView extends StatefulWidget {
 }
 
 class TreeViewState extends State<TreeView> {
+  //TODO: override dispose and remove the memory leak we currently have (low prio)
   Tree todoTree;
   TreeNode center;
   // final ScrollController _scrollController = ScrollController();
@@ -78,8 +79,10 @@ class TreeViewState extends State<TreeView> {
                   items: bitonicSiblings,
                   height: constraints.maxHeight,
                   controller: _controller,
-                  onChangeCallback: onScrollChangeCallback,
-                  onHorDragEndCallback: onHorDragEndCallbackParent),
+                  onPageChangeCallback: onPageChangeCallback,
+                  onHorDragEndCallback: onHorDragEndCallbackParent,
+                  notificationListener: parentScrollNotification,
+              ),
               CustomPaint(
                 painter: RegularConnectionLayerPainter(
                     scrollOffset: _scrollOffsetChildren,
@@ -100,7 +103,8 @@ class TreeViewState extends State<TreeView> {
               NodeListRegular(
                   items: bitonicChildren,
                   height: constraints.maxHeight,
-                  onHorDragEndCallback: onHorDragEndCallbackChild)
+                  onHorDragEndCallback: onHorDragEndCallbackChild,
+                  notificationListener: childScrollNotification)
             ],
           ),
         ),
@@ -123,13 +127,14 @@ class TreeViewState extends State<TreeView> {
         }
       });
 
-  void onScrollChangeCallback(int index, CarouselPageChangedReason reason) =>
+  void onPageChangeCallback(int index, CarouselPageChangedReason reason) =>
       setState(() {
         if (reason == CarouselPageChangedReason.manual) {
           shiftCenter(bitonicSiblings.elementAt(index));
         }
       });
 
+  // this sets a new center in the parent (left view)
   void newCenter(TreeNode newCenter) {
     int index;
     center = newCenter;
@@ -137,13 +142,57 @@ class TreeViewState extends State<TreeView> {
     bitonicChildren = BitonicSequence.fromIterable(center.children);
     index = bitonicSiblings.indexOf(center);
     _scrollOffsetParent.value = [0, index * AppConstants.paddedNodeHeight * -1];
+    _scrollOffsetChildren.value = [0, 0];
     _controller.jumpToPage(index);
   }
 
   void shiftCenter(TreeNode sCenter) {
     center = sCenter;
+    double oldEnd = _scrollOffsetChildren.value[1];
     _scrollOffsetParent.value = [0, bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1];
+    _scrollOffsetChildren.value = [0, 0];
     bitonicChildren = BitonicSequence.fromIterable(center.children);
+  }
+
+  bool childScrollNotification(Notification notification) {
+    double oldStartChildren = _scrollOffsetChildren.value[0];
+    if (notification is ScrollEndNotification) {
+      _scrollOffsetChildren.value = [oldStartChildren, -notification.metrics.pixels];
+    } else if (notification is ScrollUpdateNotification) {
+      _scrollOffsetChildren.value = [oldStartChildren, -notification.metrics.pixels];
+    }
+    return true;
+  }
+
+  bool parentScrollNotification(Notification notification) {
+    double oldStartParent = _scrollOffsetParent.value[0];
+    double oldEndChildren = _scrollOffsetChildren.value[1];
+    double newEndParent;
+    double newStartChildren;
+
+    double scrollOffset;
+    // this is cursed!
+    double scrollOffsetOffset = 0;
+
+    if (notification is ScrollEndNotification) {
+      scrollOffset = notification.metrics.pixels;
+    } else if (notification is ScrollUpdateNotification) {
+      scrollOffset = notification.metrics.pixels;
+
+    } else  {
+      return false;
+    }
+
+    newEndParent = -scrollOffset;
+    scrollOffset %= AppConstants.paddedNodeHeight;
+    scrollOffsetOffset = AppConstants.paddedNodeHeight * (scrollOffset / AppConstants.paddedNodeCenter).floor();
+    if (scrollOffsetOffset > AppConstants.paddedNodeHeight) {
+      scrollOffsetOffset %= AppConstants.paddedNodeHeight;
+    }
+    newStartChildren = -(scrollOffset % AppConstants.paddedNodeHeight) + scrollOffsetOffset;
+    _scrollOffsetParent.value = [oldStartParent, newEndParent];
+    _scrollOffsetChildren.value = [newStartChildren, oldEndChildren];
+    return true;
   }
 }
 
@@ -175,15 +224,17 @@ abstract class NodeList extends StatelessWidget {
 
 class NodeListCarousel extends NodeList {
   final IndexTrackingCarouselController controller;
-  final Function(int, CarouselPageChangedReason)? onChangeCallback;
+  final Function(int, CarouselPageChangedReason)? onPageChangeCallback;
+  final bool Function(Notification)? notificationListener;
 
   NodeListCarousel(
       {super.key,
       required super.items,
       required super.height,
       required this.controller,
-      this.onChangeCallback,
-      super.onHorDragEndCallback});
+      this.onPageChangeCallback,
+      super.onHorDragEndCallback,
+      this.notificationListener});
 
   @override
   Widget build(BuildContext context) {
@@ -198,25 +249,31 @@ class NodeListCarousel extends NodeList {
         //),
         width: AppConstants.nodeWidth,
         height: height,
-        child: CarouselSlider(
-            options: CarouselOptions(
-                height: height,
-                enlargeCenterPage: false,
-                enableInfiniteScroll: false,
-                scrollDirection: Axis.vertical,
-                viewportFraction: AppConstants.interNodeDistance / height,
-                onPageChanged: onChangeCallback),
-            carouselController: controller,
-            items: List.from(_buildTreeNodesListItems(items.iter))));
+        child: NotificationListener(
+          onNotification: notificationListener,
+          child: CarouselSlider(
+              options: CarouselOptions(
+                  height: height,
+                  enlargeCenterPage: false,
+                  enableInfiniteScroll: false,
+                  scrollDirection: Axis.vertical,
+                  viewportFraction: AppConstants.interNodeDistance / height,
+                  onPageChanged: onPageChangeCallback),
+              carouselController: controller,
+              items: List.from(_buildTreeNodesListItems(items.iter))),
+        ));
   }
 }
 
 class NodeListRegular extends NodeList {
+  final bool Function(Notification)? notificationListener;
+
   NodeListRegular(
       {super.key,
       required super.items,
       required super.height,
-      super.onHorDragEndCallback});
+      super.onHorDragEndCallback,
+      this.notificationListener});
 
   @override
   Widget build(BuildContext context) {
@@ -231,31 +288,34 @@ class NodeListRegular extends NodeList {
         //),
         width: AppConstants.nodeWidth,
         height: items.length * AppConstants.interNodeDistance,
-        child: ListView(
-            controller: _scrollController,
-            physics: SnapScrollPhysics.builder(getSnaps),
-            scrollDirection: Axis.vertical,
-            children: List.from(
-                _buildTreeNodesListItems(items.iter, showLeafCount: true))
-              // TODO: can this be solved more elegantly? (EDIT: yes if the paddedSize is a multiple of the screen height minus the appbar)
-              // TLDR: Invisible SizeBox to make sure our scroll offset is a multiple of the paddedNodeHeight
-              // right now when the height of the screen (minus appbar) is less than the height of our nodes
-              // (or in other words if scrolling will be enabled) we add an invisible sizebox which
-              // is has the exact height to make the combined height of our list items (nodes + invisible sizebox)
-              // equal to the screen height. So even if we scroll all the way to the bottom the bezier curves and
-              // and the nodes still line up
-              ..addAll((items.length * AppConstants.interNodeDistance <= height)
-                  ? []
-                  : [
-                      Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                                color: Colors.lightBlueAccent,
-                                width: AppConstants.nodeLineWidth),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          height: height % AppConstants.interNodeDistance)
-                    ])));
+        child: NotificationListener(
+          onNotification: notificationListener,
+          child: ListView(
+              controller: _scrollController,
+              physics: SnapScrollPhysics.builder(getSnaps),
+              scrollDirection: Axis.vertical,
+              children: List.from(
+                  _buildTreeNodesListItems(items.iter, showLeafCount: true))
+                // TODO: can this be solved more elegantly? (EDIT: yes if the paddedSize is a multiple of the screen height minus the appbar)
+                // TLDR: Invisible SizeBox to make sure our scroll offset is a multiple of the paddedNodeHeight
+                // right now when the height of the screen (minus appbar) is less than the height of our nodes
+                // (or in other words if scrolling will be enabled) we add an invisible sizebox which
+                // is has the exact height to make the combined height of our list items (nodes + invisible sizebox)
+                // equal to the screen height. So even if we scroll all the way to the bottom the bezier curves and
+                // and the nodes still line up
+                ..addAll((items.length * AppConstants.interNodeDistance <= height)
+                    ? []
+                    : [
+                        Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Colors.lightBlueAccent,
+                                  width: AppConstants.nodeLineWidth),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            height: height % AppConstants.interNodeDistance)
+                      ])),
+        ));
   }
 
   List<Snap> getSnaps() {
@@ -317,4 +377,5 @@ class IndexTrackingCarouselController extends CarouselControllerImpl {
 
   // yeah 20 lines of code for this
   int get index => _index;
+
 }
