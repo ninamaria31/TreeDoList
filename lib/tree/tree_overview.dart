@@ -51,11 +51,16 @@ class TreeOverviewWidget extends StatelessWidget {
               onTapCallback: _showDetails,
           ),
           if (currentNode.numberOfChildren > 0) ...[
-            SizedBox(
+            Container(
+              //decoration: BoxDecoration(
+              //  border: Border.all(
+              //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
+              //  borderRadius: BorderRadius.circular(8),
+              //),
               width: AppConstants.canvasWidth,
               height: AppConstants.subTreeHeight(currentNode.leafsInSubTree),
               child: CustomPaint(
-                painter: RegularConnectionLayerPainter.fromNode(currentNode),
+                painter: OverviewConnectionLayerPainter.fromNode(currentNode),
               ),
             ),
             Column(
