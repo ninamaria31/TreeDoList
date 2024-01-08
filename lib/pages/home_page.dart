@@ -3,12 +3,16 @@ import '../settings/settings.dart';
 import '../tree/tree.dart';
 import '../tree/tree_overview.dart';
 import '../tree/tree_view.dart';
+import 'package:flutter/services.dart';
 
 class TreePage extends StatelessWidget {
   const TreePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: []); // Hide status bar
+
     return FutureBuilder<Tree>(
       future: loadExampleJson(),
       builder: (context, snapshot) {
@@ -19,6 +23,59 @@ class TreePage extends StatelessWidget {
               home: Scaffold(body: Center(child: CircularProgressIndicator())));
         }
       },
+    );
+  }
+}
+
+class TreeTestApp extends StatefulWidget {
+  final Tree todoTree;
+
+  const TreeTestApp({super.key, required this.todoTree});
+
+  @override
+  _TreeTestAppState createState() => _TreeTestAppState();
+}
+
+class _TreeTestAppState extends State<TreeTestApp> {
+  late TreeView treeView;
+
+  @override
+  void initState() {
+    super.initState();
+    treeView =
+        TreeView(key: PageStorageKey('treeView'), todoTree: widget.todoTree);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: OrientationBuilder(
+        builder: (context, orientation) {
+          return Scaffold(
+            appBar: orientation == Orientation.portrait
+                ? AppBar(
+                    title: const Text('TreeView Test'),
+                    leading: Builder(
+                      builder: (context) => IconButton(
+                        icon: const Icon(Icons.menu),
+                        tooltip: 'Settings',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SettingsScreen()),
+                          );
+                        },
+                      ),
+                    ),
+                  )
+                : null, // No AppBar in landscape orientation
+            body: orientation == Orientation.portrait
+                ? treeView
+                : TreeOverviewWidget(tree: widget.todoTree),
+          );
+        },
+      ),
     );
   }
 }
@@ -51,35 +108,25 @@ class TreeViewApp extends StatelessWidget {
                 ),
               ),
             ),
-            body: Center(child: TreeOverviewWidget(tree: todoTree))));
+            body: OrientationBuilder(
+              builder: (context, orientation) {
+                return orientation == Orientation.portrait
+                    ? TreeOverviewWidget(tree: todoTree)
+                    : TreeLandscape(todoTree: todoTree);
+              },
+            )));
   }
 }
 
-class TreeTestApp extends StatelessWidget {
+class TreeLandscape extends StatelessWidget {
   final Tree todoTree;
 
-  const TreeTestApp({super.key, required this.todoTree});
+  const TreeLandscape({super.key, required this.todoTree});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
-      appBar: AppBar(
-        title: const Text('TreeView Test'),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            tooltip: 'Settings',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-        ),
-      ),
-      body: TreeView(todoTree: todoTree),
-    ));
+    return Center(
+      child: Text('Landscape view for tree: ${todoTree.root.name}'),
+    );
   }
 }
