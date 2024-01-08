@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../auth.dart';
+
 class SettingsButton extends StatelessWidget {
   const SettingsButton({super.key});
 
@@ -11,7 +13,7 @@ class SettingsButton extends StatelessWidget {
         // You can use Navigator to push a new screen
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => SettingsScreen()),
+          MaterialPageRoute(builder: (context) => const SettingsScreen()),
         );
       },
       child: const Icon(Icons.menu),
@@ -29,8 +31,14 @@ class SettingsScreen extends StatelessWidget {
         title: const Text('Settings'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: const Center(
-        child: Text('Our settings will go here...'),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () async {
+            await Auth().signOut();
+            Navigator.popUntil(context, (route) => route.isFirst);
+          },
+          child: const Text('Sign Out'),
+        ),
       ),
     );
   }

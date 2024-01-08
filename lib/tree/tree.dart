@@ -1,8 +1,29 @@
 import 'dart:collection';
 import 'dart:core';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
-enum Priority { low, medium, high }
+import '../app_constants.dart';
+
+enum Priority implements Comparable<Priority> {
+  high,
+  medium,
+  low;
+
+  Color get color {
+    switch (this) {
+      case low:
+        return Colors.lightGreen.shade200;
+      case medium:
+        return Colors.yellow.shade200;
+      case high:
+        return Colors.red.shade200;
+    }
+  }
+
+  @override
+  int compareTo(Priority other) => index.compareTo(other.index);
+}
 
 /// A class representing a task (leaf) or task group (node)
 ///
@@ -15,6 +36,7 @@ class TreeNode {
   String id;
   bool _completed = false;
   DateTime? dueDate;
+  int _level;
 
   /// backlink to the Parent for ease of use
   TreeNode? parent;
@@ -46,30 +68,37 @@ class TreeNode {
     // probably more overhead :/
     // int res = (lhs.dueDate ?? DateTime(0)).compareTo(rhs.dueDate ?? DateTime(0));
     // return res == 0 ? lhs.id.compareTo(rhs.id) : res;
-    if (lhs.dueDate == null && rhs.dueDate == null) {
-      return lhs.id.compareTo(rhs.id);
-    }
-    if (lhs.dueDate == null) {
-      return -1;
-    }
-    if (rhs.dueDate == null) {
-      return 1;
-    }
-    int ret = lhs.dueDate!.compareTo(rhs.dueDate!);
-    if (ret == 0) {
-      return lhs.id.compareTo(rhs.id);
-    }
-    return ret;
+
+    // comparator for ordering based on dueDate
+    //if (lhs.dueDate == null && rhs.dueDate == null) {
+    //  return lhs.id.compareTo(rhs.id);
+    //}
+    //if (lhs.dueDate == null) {
+    //  return -1;
+    //}
+    //if (rhs.dueDate == null) {
+    //  return 1;
+    //}
+    //int ret = lhs.dueDate!.compareTo(rhs.dueDate!);
+    //if (ret == 0) {
+    //  return lhs.id.compareTo(rhs.id);
+    //}
+    //return ret;
+    return (lhs.priority == rhs.priority)
+        ? lhs.id.compareTo(rhs.id)
+        : lhs.priority.index.compareTo(rhs.priority.index);
   };
+
   /// Constructor for TreeNodes
   ///
   /// takes a [name] and a [priority]
   /// a [description] can also be supplied
-  TreeNode(this.name, this.priority, [this.description, this.dueDate])
+  TreeNode(this.name, this.priority, {this.description, this.dueDate})
       : modified = DateTime.now().microsecondsSinceEpoch,
         _children = SplayTreeSet(treeNodeComparator),
         id = const Uuid().v4(),
-        leafsInSubTree = 1;
+        leafsInSubTree = 1,
+        _level = 0;
 
   /// Constructs TreeNode that have already existed before
   ///
@@ -87,7 +116,8 @@ class TreeNode {
       this.dueDate,
       Iterable<TreeNode> childTasks)
       : _children = SplayTreeSet(treeNodeComparator),
-        leafsInSubTree = 1 {
+        leafsInSubTree = 1,
+        _level = 0 {
     for (var child in childTasks) {
       addChild(child);
     }
@@ -100,10 +130,10 @@ class TreeNode {
   /// (by using the existingNode constructor), adds the parents to the next level
   /// and so on and so forth
   factory TreeNode.fromJson(dynamic json) {
-    List<TreeNode> children = [];
+    List<TreeNode> tmpChildren = [];
     if (json['children'] != null) {
       for (var child in json['children']) {
-        children.add(TreeNode.fromJson(child));
+        tmpChildren.add(TreeNode.fromJson(child));
       }
     }
     return TreeNode.existingNode(
@@ -115,7 +145,7 @@ class TreeNode {
         json['modified'] as int,
         json['modified'] as int?,
         DateTime.tryParse(json['dueDate'] ?? ''),
-        children);
+        tmpChildren);
   }
 
   /// A constructor for creating nodes only used for comparisons
@@ -126,7 +156,8 @@ class TreeNode {
       : priority = Priority.medium,
         modified = 0,
         _children = SplayTreeSet(treeNodeComparator),
-        leafsInSubTree = 1;
+        leafsInSubTree = 1,
+        _level = 0;
 
   // Override == and hashCode in order to store this in a hash set
   @override
@@ -152,6 +183,7 @@ class TreeNode {
       return false;
     }
     child.parent = this;
+    child._level = _level + 1;
 
     // update our own leaf count
     if (leafIncrease != 0) {
@@ -166,30 +198,92 @@ class TreeNode {
     parent?.updateLeafCount(incLeafCount);
   }
 
-  int get numberChildren => _children.length;
+  int get numberOfChildren => _children.length;
 
   Iterable<TreeNode> get children => _children;
 
-  /// return the children split into two balanced halves [TreeNodeLayerHalves.top] is descending
-  /// and [TreeNodeLayerHalves.bottom] is ascending
-  /// used by the regular tree view
-  TreeNodeLayerHalves get halves {
-    TreeNodeLayerHalves res = TreeNodeLayerHalves();
-    res.center = (numberChildren > 0) ? _children.elementAt(0) : null;
-    for (int i = 1; i < numberChildren; i++) {
-      if (i % 2 == 0) {
-        res.top.insert(0, _children.elementAt(i));
-      }
-      res.bottom.add(_children.elementAt(i));
+  /// return a BitonicSequence of the children
+  BitonicSequence? get bitonicSiblings => BitonicSequence.fromNode(this);
+}
+
+/// A sequence which ascends first and then descends
+/// used in the visualization so the most important tasks are in the middle of the list
+class BitonicSequence with ListMixin<TreeNode> {
+  // can't use the add implementation provided by the ListMixin since it only works on nullable types
+  final List<TreeNode> _store = [];
+
+  BitonicSequence([TreeNode? center]) {
+    if (center != null) _store.add(center);
+  }
+
+  factory BitonicSequence.fromNode(TreeNode node) {
+    SplayTreeSet<TreeNode> siblings;
+    if (node.parent == null) {
+      return BitonicSequence(node);
+    }
+    siblings = node.parent!._children;
+    return BitonicSequence.fromIterable(siblings);
+  }
+
+  factory BitonicSequence.fromIterable(Iterable<TreeNode> nodes) {
+    BitonicSequence res = BitonicSequence();
+    for (TreeNode node in nodes) {
+      (res._store.length % 2 == 1)
+          ? res._store.insert(0, node)
+          : res._store.add(node);
     }
     return res;
   }
-}
 
-class TreeNodeLayerHalves {
-  final List<TreeNode> top = [];
-  final List<TreeNode> bottom = [];
-  TreeNode? center;
+  @override
+  int get length => _store.length;
+
+  @override
+  TreeNode operator [](int index) {
+    return _store[index];
+  }
+
+  @override
+  void operator []=(int index, TreeNode value) {
+    throw UnsupportedError("The bitonicSequence is read only!");
+  }
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError("The bitonicSequence is read only!");
+  }
+
+  @override
+  bool get isEmpty => _store.isEmpty;
+
+  @override
+  bool get isNotEmpty => _store.isNotEmpty;
+
+  Iterable<TreeNode> get iter => _store;
+
+  @override
+  int indexOf(Object? element, [int start = 0]) =>
+      (element is TreeNode) ? _store.indexOf(element, start) : -1;
+
+  // override add and addAll because the mixin default implementation
+  // is not very efficient, so just forward it to the _store
+  @override
+  void add(TreeNode element) {
+    _store.add(element);
+  }
+
+  @override
+  void addAll(Iterable<TreeNode> iterable) {
+    _store.addAll(iterable);
+  }
+
+  /// return a list of heights we the center of the nodes are starting at the height of the center of the first node
+  List<double> get equallyDistributedHeights => [
+        for (int i = length - 1; i >= 0; i--)
+          AppConstants.paddedNodeCenter + AppConstants.paddedNodeHeight * i
+      ];
+
+  double get height => length * AppConstants.paddedNodeHeight;
 }
 
 /// Class representing the TreeDo task tree start with one Node called 'Root'
@@ -200,15 +294,25 @@ class Tree {
   /// Set with all nodes for fast lookup of specific nodes
   final HashSet<TreeNode> _taskSet = HashSet();
 
+  /// Map of the layers
+  late final Map<int, List<TreeNode>> _layers;
+
   /// Constructor for a new Tree
   Tree() : root = TreeNode('Root', Priority.medium) {
+    _layers = {
+      0: [root]
+    };
     _taskSet.add(root);
   }
 
   /// Constructs new tree from a root TreeNode
   /// Tree needs to be valid (correct parent etc)
   Tree.fromRootNode(this.root) {
+    _layers = {
+      0: [root]
+    };
     buildTaskSet(root);
+    buildLevels(root);
   }
 
   factory Tree.jsonConstructor(dynamic json) {
@@ -221,31 +325,7 @@ class Tree {
   ///
   /// return an iterable containing TreeNodes
   Iterable<TreeNode> getLevel(int level) {
-    HashSet<TreeNode> tmp = HashSet();
-    // level equals zero so we return the root
-    if (level == 0) {
-      tmp.add(root);
-      return tmp;
-    }
-
-    // Initialize the traversal Queue with the root's children
-    Queue<TreeNode> traversalQueue = Queue.from(root._children);
-
-    // Traverse all levels below our target level
-    for (var currentLevel = 1; currentLevel < level; currentLevel++) {
-      // add all nodes of the next level to the temporary storage
-      for (TreeNode currentNode in traversalQueue) {
-        tmp.addAll(currentNode._children);
-      }
-      traversalQueue.clear();
-      // add the nodes of the next level to the traversalQueue
-      traversalQueue.addAll(tmp);
-      // clear the temporary node storage
-      tmp.clear();
-    }
-    // now the traversalQueue contains the the nodes of the target level
-    tmp.addAll(traversalQueue);
-    return tmp;
+    return _layers[level] ?? [];
   }
 
   /// find the node with the [nodeId]
@@ -276,6 +356,12 @@ class Tree {
       _taskSet.remove(child);
       return false;
     }
+
+    if (_layers[targetNode._level] == null) {
+      _layers[targetNode._level] = [child];
+    } else {
+      _layers[targetNode._level]?.add(child);
+    }
     return true;
   }
 
@@ -284,5 +370,34 @@ class Tree {
       buildTaskSet(child);
     }
     _taskSet.add(subtree);
+  }
+
+  SplayTreeSet<TreeNode> getLayerFromNode(TreeNode node) {
+    return SplayTreeSet.from(
+        getLevel(node._level), TreeNode.treeNodeComparator);
+  }
+
+  void buildLevels(TreeNode root) {
+    List<TreeNode> tmp = [];
+
+    // Initialize the traversal Queue with the root's children
+    Queue<TreeNode> traversalQueue = Queue.from(root._children);
+
+    // Traverse all levels
+    for (var currentLevel = 1; traversalQueue.isNotEmpty; currentLevel++) {
+      // add all nodes of the next level to the temporary storage
+      for (TreeNode currentNode in traversalQueue) {
+        currentNode._level = currentLevel;
+        tmp.addAll(currentNode._children);
+      }
+      // traversalQueue contains the current level
+      _layers[currentLevel] = traversalQueue.toList();
+
+      traversalQueue.clear();
+      // add the nodes of the next level to the traversalQueue
+      traversalQueue.addAll(tmp);
+      // clear the temporary node storage
+      tmp.clear();
+    }
   }
 }

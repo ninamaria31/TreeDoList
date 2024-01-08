@@ -1,69 +1,31 @@
 import 'package:flutter/material.dart';
-import 'tree/tree_view.dart';
-import 'tree/tree_overview.dart';
-import 'tree/tree.dart';
-import 'settings/settings.dart';
+import 'firebase_options.dart';
+import 'package:tree_do/widget_tree.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
-  runApp(TreeTestApp());
-  return;
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
-    FutureBuilder<Tree>(
-      future: loadExampleJson(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return TreeViewApp(tree: snapshot.data ?? Tree());
-        } else {
-          return const CircularProgressIndicator();
-        }
-      },
-    ),
+    const TreeApp(),
   );
 }
 
-class TreeViewApp extends StatelessWidget {
-  final Tree tree;
-
-  const TreeViewApp({super.key, required this.tree});
+class TreeApp extends StatelessWidget {
+  const TreeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'TreeDoList',
-        home: Scaffold(
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-              title: const Text('TreeDoList'),
-              // add leading button
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu),
-                  tooltip: 'Settings',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SettingsScreen()),
-                    );
-                  },
-                ),
-              ),
-            ),
-            body: Center(child: TreeOverviewWidget(tree: tree))));
-  }
-}
-
-class TreeTestApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
-      appBar: AppBar(
-        title: const Text('TreeView Test'),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.orange,
       ),
-      body: TreeView(),
-    ));
+      home: const WidgetTree(),
+    );
   }
 }
+
+
