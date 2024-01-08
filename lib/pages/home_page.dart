@@ -45,7 +45,7 @@ class TreeViewApp extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const SettingsScreen()),
+                          builder: (context) => SettingsScreen()),
                     );
                   },
                 ),
@@ -73,7 +73,7 @@ class TreeTestApp extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
               );
             },
           ),
