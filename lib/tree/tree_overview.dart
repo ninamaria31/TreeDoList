@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import '../app_constants.dart';
 import 'tree_vis_elements.dart';
+import 'package:intl/intl.dart';
 
 Future<Tree> loadExampleJson() async {
   try {
@@ -74,16 +75,70 @@ class TreeOverviewWidget extends StatelessWidget {
     );
   }
 
-  //// TODO: create a sufficient details screen
   void _showDetails(TreeNode node, BuildContext context) {
     showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(node.name),
-            content: Text(
-                '${node.description ?? 'No Description'} due on ${node.dueDate?.toString()}'),
-          );
-        });
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            node.name,
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              if (node.description != null) ...[
+                Text(
+                  'Description:',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  node.description!,
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 20),
+              ],
+              Text(
+                'Due Date:',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                node.dueDate != null
+                    ? DateFormat('dd/MM/yy').format(node.dueDate!)
+                    : 'No Due Date',
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
