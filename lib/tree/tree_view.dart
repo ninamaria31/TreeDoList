@@ -119,6 +119,14 @@ class TreeViewState extends State<TreeView> {
             bottom: 16.0,
             left: 16.0,
             child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: _timerService.isRunning()
+                    ? Colors.white
+                    : Colors.black,
+                backgroundColor: _timerService.isRunning()
+                    ? Colors.blueGrey
+                    : Colors.white,
+              ),
               onPressed: () {
                 if (_timerService.isRunning()) {
                   _timerService.stopTimer();
@@ -128,9 +136,8 @@ class TreeViewState extends State<TreeView> {
                     print('Timer ticked! Count: $tick');
                     //noseModeCountdown = noseModeDuration - tick;
                     setState(() => noseModeCountdown = noseModeDuration -
-                        tick); // todo here is an issue with the screen not being mounted
-                    if (tick == noseModeDuration.toInt()) {
-                      // todo add " * 60 "
+                        tick); // todo add " * 60 " to make it minutes not seconds
+                    if (tick == noseModeDuration.toInt()) {// todo add " * 60 "
                       _timerService.stopTimer();
                       setState(() => noseModeCountdown = noseModeDuration);
                     }
