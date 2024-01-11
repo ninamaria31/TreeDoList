@@ -22,6 +22,7 @@ class TreeView extends StatefulWidget {
 class TreeViewState extends State<TreeView> {
   Tree todoTree;
   TreeNode center;
+
   // final ScrollController _scrollController = ScrollController();
   final IndexTrackingCarouselController _controller =
       IndexTrackingCarouselController();
@@ -29,9 +30,8 @@ class TreeViewState extends State<TreeView> {
   BitonicSequence bitonicChildren;
 
   // https://stackoverflow.com/questions/66327785/flutter-how-to-notify-custompainter-to-redraw
-  final _scrollOffsetParent = ValueNotifier<List<double>>([0,0]);
-  final _scrollOffsetChildren = ValueNotifier<List<double>>([0,0]);
-
+  final _scrollOffsetParent = ValueNotifier<List<double>>([0, 0]);
+  final _scrollOffsetChildren = ValueNotifier<List<double>>([0, 0]);
 
   TreeViewState({required this.todoTree})
       : center = todoTree.root,
@@ -61,13 +61,17 @@ class TreeViewState extends State<TreeView> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(colors: [Colors.transparent, Colors.black]).createShader(bounds),
+                    shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Colors.transparent, Colors.black])
+                        .createShader(bounds),
                     child: CustomPaint(
                       painter: CarouselConnectionLayerPainter(
                         scrollOffset: _scrollOffsetParent,
-                        connection: Connection(0, bitonicSiblings.equallyDistributedHeights),
+                        connection: Connection(
+                            0, bitonicSiblings.equallyDistributedHeights),
                         height: constraints.maxHeight,
-                        width: AppConstants.canvasWidth * 0.22,),
+                        width: AppConstants.canvasWidth * 0.22,
+                      ),
                       child: SizedBox(
                         //decoration: BoxDecoration(
                         //  border: Border.all(
@@ -89,9 +93,9 @@ class TreeViewState extends State<TreeView> {
                   CustomPaint(
                     painter: RegularConnectionLayerPainter(
                         scrollOffset: _scrollOffsetChildren,
-                        connection: Connection(0, bitonicChildren.equallyDistributedHeights),
-                        height: constraints.maxHeight
-                    ),
+                        connection: Connection(
+                            0, bitonicChildren.equallyDistributedHeights),
+                        height: constraints.maxHeight),
                     child: SizedBox(
                       //decoration: BoxDecoration(
                       //  border: Border.all(
@@ -123,8 +127,10 @@ class TreeViewState extends State<TreeView> {
                   _timerService.startTimer((int tick) {
                     print('Timer ticked! Count: $tick');
                     //noseModeCountdown = noseModeDuration - tick;
-                    setState(() => noseModeCountdown = noseModeDuration - tick); // todo here is an issue with the screen not being mounted
-                    if (tick == noseModeDuration.toInt()) { // todo add " * 60 "
+                    setState(() => noseModeCountdown = noseModeDuration -
+                        tick); // todo here is an issue with the screen not being mounted
+                    if (tick == noseModeDuration.toInt()) {
+                      // todo add " * 60 "
                       _timerService.stopTimer();
                       setState(() => noseModeCountdown = noseModeDuration);
                     }
@@ -132,7 +138,9 @@ class TreeViewState extends State<TreeView> {
                 }
               },
               child: Text(
-                _timerService.isRunning() ? 'Nose Mode: ${noseModeCountdown.toInt()} min' : 'Nose Mode Off',
+                _timerService.isRunning()
+                    ? 'Nose Mode: ${noseModeCountdown.toInt()} min'
+                    : 'Nose Mode Off',
                 style: TextStyle(fontSize: 18),
               ),
             ),
@@ -176,7 +184,10 @@ class TreeViewState extends State<TreeView> {
 
   void shiftCenter(TreeNode sCenter) {
     center = sCenter;
-    _scrollOffsetParent.value = [0, bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1];
+    _scrollOffsetParent.value = [
+      0,
+      bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1
+    ];
     bitonicChildren = BitonicSequence.fromIterable(center.children);
   }
 }
