@@ -250,3 +250,15 @@ GoogleService-Info.plist
 google-services.json
 # Plugins (already resolved through pubspec.yaml)
 .flutter-plugins/tree_do.iml
+
+.flutter-plugins
+
+.flutter-plugins-dependencies
+
+
+#ios specific
+ios/.generated/
+ios/Podfile*
+ios/Flutter/Debug.xcconfig
+ios/Flutter/Release.xcconfig
+ios/Runner.xcworkspace/contents.xcworkspacedata

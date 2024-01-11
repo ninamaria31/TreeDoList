@@ -63,7 +63,7 @@ class _TreeTestAppState extends State<TreeTestApp> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const SettingsScreen()),
+                                builder: (context) => SettingsScreen()),
                           );
                         },
                       ),
@@ -102,7 +102,7 @@ class TreeViewApp extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const SettingsScreen()),
+                          builder: (context) => SettingsScreen()),
                     );
                   },
                 ),
