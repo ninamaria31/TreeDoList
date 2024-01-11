@@ -5,6 +5,10 @@ import 'package:snap_scroll_physics/snap_scroll_physics.dart';
 import '../app_constants.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'connection_layer.dart';
+import '../services/nose_mode_service.dart';
+import '../settings/settings.dart';
+
+TimerService _timerService = TimerService();
 
 class TreeView extends StatefulWidget {
   final Tree todoTree;
@@ -42,68 +46,98 @@ class TreeViewState extends State<TreeView> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      return SizedBox(
-        //decoration: BoxDecoration(
-        //  border: Border.all(
-        //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
-        //  borderRadius: BorderRadius.circular(8),
-        //),
-        height: MediaQuery.of(context).size.height,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 6, right: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(colors: [Colors.transparent, Colors.black]).createShader(bounds),
-                child: CustomPaint(
-                  painter: CarouselConnectionLayerPainter(
-                      scrollOffset: _scrollOffsetParent,
-                      connection: Connection(0, bitonicSiblings.equallyDistributedHeights),
-                      height: constraints.maxHeight,
-                      width: AppConstants.canvasWidth * 0.22,),
-                  child: SizedBox(
-                    //decoration: BoxDecoration(
-                    //  border: Border.all(
-                    //      color: Colors.lightBlue,
-                    //      width: AppConstants.nodeLineWidth),
-                    //  borderRadius: BorderRadius.circular(8),
-                    //),
-                    width: AppConstants.canvasWidth * 0.22,
-                    height: constraints.maxHeight,
+      return Stack(
+        children: [
+          SizedBox(
+            //decoration: BoxDecoration(
+            //  border: Border.all(
+            //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
+            //  borderRadius: BorderRadius.circular(8),
+            //),
+            height: MediaQuery.of(context).size.height,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 6, right: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(colors: [Colors.transparent, Colors.black]).createShader(bounds),
+                    child: CustomPaint(
+                      painter: CarouselConnectionLayerPainter(
+                        scrollOffset: _scrollOffsetParent,
+                        connection: Connection(0, bitonicSiblings.equallyDistributedHeights),
+                        height: constraints.maxHeight,
+                        width: AppConstants.canvasWidth * 0.22,),
+                      child: SizedBox(
+                        //decoration: BoxDecoration(
+                        //  border: Border.all(
+                        //      color: Colors.lightBlue,
+                        //      width: AppConstants.nodeLineWidth),
+                        //  borderRadius: BorderRadius.circular(8),
+                        //),
+                        width: AppConstants.canvasWidth * 0.22,
+                        height: constraints.maxHeight,
+                      ),
+                    ),
                   ),
-                ),
+                  NodeListCarousel(
+                      items: bitonicSiblings,
+                      height: constraints.maxHeight,
+                      controller: _controller,
+                      onChangeCallback: onScrollChangeCallback,
+                      onHorDragEndCallback: onHorDragEndCallbackParent),
+                  CustomPaint(
+                    painter: RegularConnectionLayerPainter(
+                        scrollOffset: _scrollOffsetChildren,
+                        connection: Connection(0, bitonicChildren.equallyDistributedHeights),
+                        height: constraints.maxHeight
+                    ),
+                    child: SizedBox(
+                      //decoration: BoxDecoration(
+                      //  border: Border.all(
+                      //      color: Colors.lightBlue,
+                      //      width: AppConstants.nodeLineWidth),
+                      //  borderRadius: BorderRadius.circular(8),
+                      //),
+                      width: AppConstants.canvasWidth,
+                      height: constraints.maxHeight,
+                    ),
+                  ),
+                  NodeListRegular(
+                      items: bitonicChildren,
+                      height: constraints.maxHeight,
+                      onHorDragEndCallback: onHorDragEndCallbackChild)
+                ],
               ),
-              NodeListCarousel(
-                  items: bitonicSiblings,
-                  height: constraints.maxHeight,
-                  controller: _controller,
-                  onChangeCallback: onScrollChangeCallback,
-                  onHorDragEndCallback: onHorDragEndCallbackParent),
-              CustomPaint(
-                painter: RegularConnectionLayerPainter(
-                    scrollOffset: _scrollOffsetChildren,
-                    connection: Connection(0, bitonicChildren.equallyDistributedHeights),
-                    height: constraints.maxHeight
-                ),
-                child: SizedBox(
-                  //decoration: BoxDecoration(
-                  //  border: Border.all(
-                  //      color: Colors.lightBlue,
-                  //      width: AppConstants.nodeLineWidth),
-                  //  borderRadius: BorderRadius.circular(8),
-                  //),
-                  width: AppConstants.canvasWidth,
-                  height: constraints.maxHeight,
-                ),
-              ),
-              NodeListRegular(
-                  items: bitonicChildren,
-                  height: constraints.maxHeight,
-                  onHorDragEndCallback: onHorDragEndCallbackChild)
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            bottom: 16.0,
+            left: 16.0,
+            child: ElevatedButton(
+              onPressed: () {
+                if (_timerService.isRunning()) {
+                  _timerService.stopTimer();
+                  setState(() => noseModeCountdown = noseModeDuration);
+                } else {
+                  _timerService.startTimer((int tick) {
+                    print('Timer ticked! Count: $tick');
+                    //noseModeCountdown = noseModeDuration - tick;
+                    setState(() => noseModeCountdown = noseModeDuration - tick); // todo here is an issue with the screen not being mounted
+                    if (tick == noseModeDuration.toInt()) { // todo add " * 60 "
+                      _timerService.stopTimer();
+                      setState(() => noseModeCountdown = noseModeDuration);
+                    }
+                  });
+                }
+              },
+              child: Text(
+                _timerService.isRunning() ? 'Nose Mode: ${noseModeCountdown.toInt()} min' : 'Nose Mode Off',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ),
+        ],
       );
     });
   }

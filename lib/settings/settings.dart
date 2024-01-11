@@ -66,40 +66,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 20),
             ],
           ),
-          Switch(
-            value: _timerService.isRunning(),
-            onChanged: (value) {
-              setState(() {
-                if (value) {
-                  _timerService.startTimer((int tick) {
-                    print('Timer ticked! Count: $tick');
-                    //noseModeCountdown = noseModeDuration - tick;
-                    setState(() => noseModeCountdown = noseModeDuration - tick); // todo here is an issue with the screen not being mounted
-                    if (tick == noseModeDuration.toInt()) { // todo add " * 60 "
-                      _timerService.stopTimer();
-                      setState(() => noseModeCountdown = noseModeDuration);
-                    }
-                  });
-                } else {
-                  _timerService.stopTimer();
-                  noseModeCountdown = noseModeDuration;
-                }
-              });
-            },
-          ),
-          Text(
-            _timerService.isRunning() ? 'Nose Mode Timer: ${noseModeCountdown.toInt()} minutes remaining' : 'Nose Mode Off',
-            style: TextStyle(fontSize: 18),
-          ),
-          //ElevatedButton(
-          //  child:  !_noseModeActive ? Text("Start Nose Mode"): Text("Stop Nose Mode"),
-          //  //    style: TextStyle(fontSize: 14)
-          //
-          //  onPressed: () {
-          //    setState(() => _noseModeActive = !_noseModeActive);
-          //    _startTimer();
-          //  },
-          //),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
