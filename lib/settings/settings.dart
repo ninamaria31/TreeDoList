@@ -43,7 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: Column(
         children: <Widget>[
-          SizedBox(height: 20), // adds a padding between the appbar and the content
+          SizedBox(height: 60), // adds a padding between the appbar and the content
           Column(
             children: [
               Text(
@@ -63,10 +63,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   });
                 },
               ),
-              const SizedBox(height: 20),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 40),
+          Text(
+            'Email: ${Auth().currentUser?.email}',
+            style: const TextStyle(fontSize: 18),
+          ),
+          const SizedBox(height: 40),
           ElevatedButton(
             onPressed: () async {
               await Auth().signOut();
