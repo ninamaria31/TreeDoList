@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:wakelock/wakelock.dart';
 
 class TimerService {
   late Timer _timer;
@@ -13,6 +14,7 @@ class TimerService {
         callback(timer.tick);
       });
       _isRunning = true;
+      Wakelock.enable();
     }
   }
 
@@ -20,6 +22,7 @@ class TimerService {
     if (_isRunning) {
       _timer.cancel();
       _isRunning = false;
+      Wakelock.disable();
     }
   }
 

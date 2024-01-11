@@ -43,6 +43,7 @@ dependencies:
   google_sign_in: ^6.2.1
   firebase_ui_oauth_google: ^1.2.16
   flutter_svg: ^2.0.9
+  wakelock: ^0.6.2
 
 dev_dependencies:
   flutter_test:

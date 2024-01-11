@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import '../auth.dart';
 import '../services/nose_mode_service.dart';
