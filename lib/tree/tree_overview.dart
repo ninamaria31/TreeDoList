@@ -8,10 +8,10 @@ import 'tree_vis_elements.dart';
 
 Future<Tree> loadExampleJson() async {
   try {
-  String jsonString =
-      await rootBundle.loadString('assets/example_complex_tree.json');
-  Map<String, dynamic> jsonData = json.decode(jsonString);
-  return Tree.jsonConstructor(jsonData['root']);
+    String jsonString =
+        await rootBundle.loadString('assets/example_complex_tree.json');
+    Map<String, dynamic> jsonData = json.decode(jsonString);
+    return Tree.jsonConstructor(jsonData['root']);
   } catch (e) {
     print('Error loading/parsing JSON: $e');
     return Tree();
@@ -20,18 +20,20 @@ Future<Tree> loadExampleJson() async {
 
 class TreeOverviewWidget extends StatelessWidget {
   final Tree tree;
+  final TransformationController _controller = TransformationController();
 
-
-  const TreeOverviewWidget({super.key, required this.tree});
+  TreeOverviewWidget({super.key, required this.tree});
 
   @override
   Widget build(BuildContext context) {
+    _controller.value = Matrix4.identity()..scale(0.5);
+
     return InteractiveViewer(
-      constrained: false,
-      minScale: 0.1,
-      maxScale: 10.0,
-      child: _buildTree(tree.root, context)
-    );
+        constrained: false,
+        minScale: 0.1,
+        maxScale: 10.0,
+        transformationController: _controller,
+        child: _buildTree(tree.root, context));
   }
 
   Widget _buildTree(TreeNode currentNode, BuildContext context) {
@@ -47,8 +49,8 @@ class TreeOverviewWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           NodeWidget(
-              node: currentNode,
-              onTapCallback: _showDetails,
+            node: currentNode,
+            onTapCallback: _showDetails,
           ),
           if (currentNode.numberOfChildren > 0) ...[
             Container(
@@ -84,11 +86,9 @@ class TreeOverviewWidget extends StatelessWidget {
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text(node.name),
-            content: Text('${node.description ?? 'No Description'} due on ${node.dueDate?.toString()}'),
+            content: Text(
+                '${node.description ?? 'No Description'} due on ${node.dueDate?.toString()}'),
           );
-        }
-    );
+        });
   }
 }
-
-

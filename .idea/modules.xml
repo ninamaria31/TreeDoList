@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/TreeDoList.iml" filepath="$PROJECT_DIR$/.idea/TreeDoList.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tree_do_app.iml" filepath="$PROJECT_DIR$/tree_do_app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/tree_do_app_android.iml" filepath="$PROJECT_DIR$/android/tree_do_app_android.iml" />
     </modules>
   </component>
 </project>

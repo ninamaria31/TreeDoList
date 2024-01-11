@@ -19,6 +19,7 @@ class TreeViewState extends State<TreeView> {
   //TODO: override dispose and remove the memory leak we currently have (low prio)
   Tree todoTree;
   TreeNode center;
+
   // final ScrollController _scrollController = ScrollController();
   final IndexTrackingCarouselController _controller =
       IndexTrackingCarouselController();
@@ -26,9 +27,8 @@ class TreeViewState extends State<TreeView> {
   BitonicSequence bitonicChildren;
 
   // https://stackoverflow.com/questions/66327785/flutter-how-to-notify-custompainter-to-redraw
-  final _scrollOffsetParent = ValueNotifier<List<double>>([0,0]);
-  final _scrollOffsetChildren = ValueNotifier<List<double>>([0,0]);
-
+  final _scrollOffsetParent = ValueNotifier<List<double>>([0, 0]);
+  final _scrollOffsetChildren = ValueNotifier<List<double>>([0, 0]);
 
   TreeViewState({required this.todoTree})
       : center = todoTree.root,
@@ -43,7 +43,7 @@ class TreeViewState extends State<TreeView> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      return Container(
+      return SizedBox(
         //decoration: BoxDecoration(
         //  border: Border.all(
         //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
@@ -56,14 +56,18 @@ class TreeViewState extends State<TreeView> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(colors: [Colors.transparent, Colors.black]).createShader(bounds),
+                shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Colors.transparent, Colors.black])
+                    .createShader(bounds),
                 child: CustomPaint(
                   painter: CarouselConnectionLayerPainter(
-                      scrollOffset: _scrollOffsetParent,
-                      connection: Connection(0, bitonicSiblings.equallyDistributedHeights),
-                      height: constraints.maxHeight,
-                      width: AppConstants.canvasWidth * 0.22,),
-                  child: Container(
+                    scrollOffset: _scrollOffsetParent,
+                    connection: Connection(
+                        0, bitonicSiblings.equallyDistributedHeights),
+                    height: constraints.maxHeight,
+                    width: AppConstants.canvasWidth * 0.22,
+                  ),
+                  child: SizedBox(
                     //decoration: BoxDecoration(
                     //  border: Border.all(
                     //      color: Colors.lightBlue,
@@ -86,10 +90,10 @@ class TreeViewState extends State<TreeView> {
               CustomPaint(
                 painter: RegularConnectionLayerPainter(
                     scrollOffset: _scrollOffsetChildren,
-                    connection: Connection(0, bitonicChildren.equallyDistributedHeights),
-                    height: constraints.maxHeight
-                ),
-                child: Container(
+                    connection: Connection(
+                        0, bitonicChildren.equallyDistributedHeights),
+                    height: constraints.maxHeight),
+                child: SizedBox(
                   //decoration: BoxDecoration(
                   //  border: Border.all(
                   //      color: Colors.lightBlue,
@@ -241,7 +245,7 @@ class NodeListCarousel extends NodeList {
     if (items.isEmpty) {
       return Container();
     }
-    return Container(
+    return SizedBox(
         //decoration: BoxDecoration(
         //  border: Border.all(
         //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
@@ -280,7 +284,7 @@ class NodeListRegular extends NodeList {
     if (items.isEmpty) {
       return Container();
     }
-    return Container(
+    return SizedBox(
         //decoration: BoxDecoration(
         //  border: Border.all(
         //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),

@@ -42,7 +42,7 @@
               },
               {
                 "uuid": "b973f93f-90af-46f6-9233-285e822c621f",
-                "name": "Lable Dry Goods Containers",
+                "name": "Label Dry Goods Containers",
                 "description": "Don't forget the the containers in the pantry.",
                 "completed": false,
                 "modified": 1678912345,
@@ -89,7 +89,7 @@
           },
           {
             "uuid": "15d7fb6e-59f2-48e0-81d9-08e94a4359b7",
-            "name": "Start Callender",
+            "name": "Start Calendar",
             "description": null,
             "completed": false,
             "modified": 1678912345,
