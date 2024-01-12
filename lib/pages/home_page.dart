@@ -38,12 +38,15 @@ class TreeTestApp extends StatefulWidget {
 
 class _TreeTestAppState extends State<TreeTestApp> {
   late TreeView treeView;
+  late TreeOverviewWidget treeOverview;
 
   @override
   void initState() {
     super.initState();
     treeView =
         TreeView(key: PageStorageKey('treeView'), todoTree: widget.todoTree);
+    treeOverview =
+        TreeOverviewWidget(key: PageStorageKey('treeOverview'), tree: widget.todoTree);
   }
 
   @override
@@ -72,7 +75,7 @@ class _TreeTestAppState extends State<TreeTestApp> {
                 : null, // No AppBar in landscape orientation
             body: orientation == Orientation.portrait
                 ? treeView
-                : TreeOverviewWidget(tree: widget.todoTree),
+                : treeOverview,
           );
         },
       ),
