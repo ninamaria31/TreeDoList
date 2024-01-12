@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:tree_do/tree/tree_view.dart';
 import '../auth.dart';
 import '../services/nose_mode_service.dart';
 
 // global variable for storing the duration of the nose mode
 int noseModeDuration = 15;
-int noseModeCountdown = 15;
+
 
 class SettingsButton extends StatelessWidget {
   const SettingsButton({super.key});
@@ -54,10 +55,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 max: 120,
                 divisions: 24,
                 label: noseModeDuration.round().toString(),
-                onChanged: (double value) {
+                onChanged: timerService.isRunning.value ? null : (double value) {
                   setState(() {
                     noseModeDuration = value.toInt();
-                    noseModeCountdown = value.toInt();
                   });
                 },
               ),
