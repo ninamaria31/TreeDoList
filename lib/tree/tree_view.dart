@@ -9,7 +9,6 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'connection_layer.dart';
 import '../services/nose_mode_service.dart';
 import '../settings/settings.dart';
-import 'package:battery/battery.dart';
 
 TimerService timerService = TimerService(noseModeDuration);
 var remaining_nose_mode_duration;

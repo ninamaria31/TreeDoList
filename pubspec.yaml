@@ -46,6 +46,8 @@ dependencies:
   firebase_ui_oauth_google: ^1.2.16
   flutter_svg: ^2.0.9
   wakelock: ^0.6.2
+  screen_brightness: ^0.2.2+1
+  screen_brightness_android: ^0.1.0+2
 
 dev_dependencies:
   flutter_test:

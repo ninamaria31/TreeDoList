@@ -4,33 +4,44 @@ import 'package:flutter/cupertino.dart';
 import 'package:wakelock/wakelock.dart';
 import '../settings/settings.dart';
 import 'package:battery_info/battery_info_plugin.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
+
 
 class TimerService {
   late Timer _timer;
   StreamController<int> _tickController = StreamController<int>.broadcast();
   final ValueNotifier<bool> _isRunning = ValueNotifier(false);
   bool isAllowed = true;
+  late double _initialBrightness;
 
   TimerService(int noseModeDuration);
 
   Stream<int> get tickStream => _tickController.stream;
   ValueNotifier<bool> get isRunning => _isRunning;
 
-  void startTimer() {
+  Future<void> startTimer() async {
     if (!_isRunning.value) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         // Pass the remaining time to the stream
-        _tickController.add((noseModeDuration - timer.tick) as int);
+        var ticks = noseModeDuration - timer.tick;
+        _tickController.add(ticks);
+        if (ticks < 0) {
+        stopTimer();
+        return;
+        }
       });
       _isRunning.value = true;
+      _initialBrightness = await ScreenBrightnessPlatform.instance.current;
       Wakelock.enable();
+      await ScreenBrightnessPlatform.instance.setScreenBrightness(0.3);
     }
   }
 
-  void stopTimer() {
+  Future<void> stopTimer() async {
     if (_isRunning.value) {
       _timer.cancel();
       _isRunning.value = false;
+      await ScreenBrightnessPlatform.instance.setScreenBrightness(_initialBrightness);
       Wakelock.disable();
       resetTimer();
     }
