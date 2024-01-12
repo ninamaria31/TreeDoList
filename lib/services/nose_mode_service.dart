@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'package:battery_info/enums/charging_status.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:wakelock/wakelock.dart';
 import '../settings/settings.dart';
+import 'package:battery_info/battery_info_plugin.dart';
 
 class TimerService {
   late Timer _timer;
   StreamController<int> _tickController = StreamController<int>.broadcast();
   final ValueNotifier<bool> _isRunning = ValueNotifier(false);
+  bool isAllowed = true;
 
   TimerService(int noseModeDuration);
 
@@ -14,8 +17,6 @@ class TimerService {
   ValueNotifier<bool> get isRunning => _isRunning;
 
   void startTimer() {
-    print("#");
-    print(noseModeDuration);
     if (!_isRunning.value) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         // Pass the remaining time to the stream
@@ -43,5 +44,17 @@ class TimerService {
     _timer.cancel();
     _tickController.close();
     _isRunning.dispose();
+  }
+
+  void isNoseModeAllowed() async {
+    var batteryLevel = (await BatteryInfoPlugin().androidBatteryInfo)?.batteryLevel;
+    var chargingStatus = (await BatteryInfoPlugin().androidBatteryInfo)?.chargingStatus;
+    if (chargingStatus == ChargingStatus.Charging) {
+      isAllowed = true;
+    } else if (batteryLevel! > 30) {
+      isAllowed = true;
+    } else {
+      isAllowed = false;
+    }
   }
 }

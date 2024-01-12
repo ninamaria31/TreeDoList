@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
@@ -7,9 +9,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'connection_layer.dart';
 import '../services/nose_mode_service.dart';
 import '../settings/settings.dart';
+import 'package:battery/battery.dart';
 
 TimerService timerService = TimerService(noseModeDuration);
 var remaining_nose_mode_duration;
+final noseModeAllowed = ValueNotifier<bool>(true);
 
 class TreeView extends StatefulWidget {
   final Tree todoTree;
@@ -42,6 +46,10 @@ class TreeViewState extends State<TreeView> {
   @override
   void initState() {
     super.initState();
+    Timer.periodic(Duration(minutes: 3), (Timer t) async {
+      timerService.isNoseModeAllowed();
+      noseModeAllowed.value = timerService.isAllowed;
+    });
   }
 
   @override
@@ -124,24 +132,29 @@ class TreeViewState extends State<TreeView> {
                 ValueListenableBuilder<bool>(
                   valueListenable: timerService.isRunning,
                   builder: (context, isRunning, child) {
-                    return ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: timerService.isRunning.value
-                            ? Colors.white
-                            : Colors.black,
-                        backgroundColor: timerService.isRunning.value
-                            ? Colors.blueGrey
-                            : Colors.white,
-                      ),
-                      onPressed: () {
-                        if (isRunning) {
-                          timerService.stopTimer();
-                        } else {
-                          timerService.startTimer();
-                        }
+                    return ValueListenableBuilder<bool>(
+                      valueListenable: noseModeAllowed,
+                      builder: (context, level, child) {
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: timerService.isRunning.value
+                                ? Colors.white
+                                : Colors.black,
+                            backgroundColor: timerService.isRunning.value
+                                ? Colors.blueGrey
+                                : Colors.white,
+                          ),
+                          onPressed: (noseModeAllowed.value || isRunning) ? () {
+                            if (isRunning) {
+                              timerService.stopTimer();
+                            } else {
+                              timerService.startTimer();
+                            }
+                          } : null,
+                          child: Text(
+                              isRunning ? 'Stop Nose Mode' : 'Start Nose Mode'),
+                        );
                       },
-                      child: Text(
-                          isRunning ? 'Stop Nose Mode' : 'Start Nose Mode'),
                     );
                   },
                 ),
