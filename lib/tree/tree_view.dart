@@ -8,7 +8,8 @@ import 'connection_layer.dart';
 import '../services/nose_mode_service.dart';
 import '../settings/settings.dart';
 
-TimerService _timerService = TimerService();
+TimerService timerService = TimerService(noseModeDuration);
+var remaining_nose_mode_duration;
 
 class TreeView extends StatefulWidget {
   final Tree todoTree;
@@ -118,38 +119,45 @@ class TreeViewState extends State<TreeView> {
           Positioned(
             bottom: 16.0,
             left: 16.0,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                foregroundColor: _timerService.isRunning()
-                    ? Colors.white
-                    : Colors.black,
-                backgroundColor: _timerService.isRunning()
-                    ? Colors.blueGrey
-                    : Colors.white,
-              ),
-              onPressed: () {
-                if (_timerService.isRunning()) {
-                  _timerService.stopTimer();
-                  setState(() => noseModeCountdown = noseModeDuration);
-                } else {
-                  _timerService.startTimer((int tick) {
-                    print('Timer ticked! Count: $tick');
-                    //noseModeCountdown = noseModeDuration - tick;
-                    setState(() => noseModeCountdown = noseModeDuration -
-                        tick); // todo add " * 60 " to make it minutes not seconds
-                    if (tick == noseModeDuration.toInt()) {// todo add " * 60 "
-                      _timerService.stopTimer();
-                      setState(() => noseModeCountdown = noseModeDuration);
+            child: Row(
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: timerService.isRunning,
+                  builder: (context, isRunning, child) {
+                    return ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: timerService.isRunning.value
+                            ? Colors.white
+                            : Colors.black,
+                        backgroundColor: timerService.isRunning.value
+                            ? Colors.blueGrey
+                            : Colors.white,
+                      ),
+                      onPressed: () {
+                        if (isRunning) {
+                          timerService.stopTimer();
+                        } else {
+                          timerService.startTimer();
+                        }
+                      },
+                      child: Text(
+                          isRunning ? 'Stop Nose Mode' : 'Start Nose Mode'),
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                StreamBuilder<int>(
+                  stream: timerService.tickStream,
+                  builder: (context, snapshot) {
+                    if (timerService.isRunning.value && snapshot.hasData) {
+                      remaining_nose_mode_duration = snapshot.data!;
+                      return Text('($remaining_nose_mode_duration min)');
+                    } else {
+                      return Text('');
                     }
-                  });
-                }
-              },
-              child: Text(
-                _timerService.isRunning()
-                    ? 'Nose Mode: ${noseModeCountdown.toInt()} min'
-                    : 'Nose Mode Off',
-                style: TextStyle(fontSize: 18),
-              ),
+                  },
+                ),
+              ],
             ),
           ),
         ],

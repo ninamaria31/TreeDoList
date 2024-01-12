@@ -1,30 +1,47 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:wakelock/wakelock.dart';
+import '../settings/settings.dart';
 
 class TimerService {
   late Timer _timer;
-  late bool _isRunning;
+  StreamController<int> _tickController = StreamController<int>.broadcast();
+  final ValueNotifier<bool> _isRunning = ValueNotifier(false);
 
-  TimerService() : _isRunning = false;
+  TimerService(int noseModeDuration);
 
-  void startTimer(Function (int) callback) {
-    if (!_isRunning) {
+  Stream<int> get tickStream => _tickController.stream;
+  ValueNotifier<bool> get isRunning => _isRunning;
+
+  void startTimer() {
+    print("#");
+    print(noseModeDuration);
+    if (!_isRunning.value) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        // Pass the timer tick count to the callback function
-        callback(timer.tick);
+        // Pass the remaining time to the stream
+        _tickController.add((noseModeDuration - timer.tick) as int);
       });
-      _isRunning = true;
+      _isRunning.value = true;
       Wakelock.enable();
     }
   }
 
   void stopTimer() {
-    if (_isRunning) {
+    if (_isRunning.value) {
       _timer.cancel();
-      _isRunning = false;
+      _isRunning.value = false;
       Wakelock.disable();
+      resetTimer();
     }
   }
 
-  bool isRunning() => _isRunning;
+  void resetTimer() {
+    _tickController.add(noseModeDuration.toInt());
+  }
+
+  void dispose() {
+    _timer.cancel();
+    _tickController.close();
+    _isRunning.dispose();
+  }
 }

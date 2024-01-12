@@ -3,9 +3,8 @@ import '../auth.dart';
 import '../services/nose_mode_service.dart';
 
 // global variable for storing the duration of the nose mode
-double noseModeDuration = 15.0;
-double noseModeCountdown = 15.0;
-TimerService _timerService = TimerService();
+int noseModeDuration = 15;
+int noseModeCountdown = 15;
 
 class SettingsButton extends StatelessWidget {
   const SettingsButton({super.key});
@@ -46,19 +45,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Column(
             children: [
               Text(
-                'Nose Mode Duration: ${noseModeDuration.toInt()} minutes',
+                'Nose Mode Duration: $noseModeDuration minutes',
                 style: const TextStyle(fontSize: 18),
               ),
               Slider(
-                value: noseModeDuration,
+                value: noseModeDuration.toDouble(),
                 min: 0,
                 max: 120,
                 divisions: 24,
                 label: noseModeDuration.round().toString(),
                 onChanged: (double value) {
                   setState(() {
-                    noseModeDuration = value;
-                    noseModeCountdown = value;
+                    noseModeDuration = value.toInt();
+                    noseModeCountdown = value.toInt();
                   });
                 },
               ),
