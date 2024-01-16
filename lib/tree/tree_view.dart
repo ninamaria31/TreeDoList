@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
@@ -5,6 +7,12 @@ import 'package:snap_scroll_physics/snap_scroll_physics.dart';
 import '../app_constants.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'connection_layer.dart';
+import '../services/nose_mode_service.dart';
+import '../settings/settings.dart';
+
+TimerService timerService = TimerService(noseModeDuration);
+var remaining_nose_mode_duration;
+final noseModeAllowed = ValueNotifier<bool>(true);
 
 class TreeView extends StatefulWidget {
   final Tree todoTree;
@@ -38,46 +46,81 @@ class TreeViewState extends State<TreeView> {
   @override
   void initState() {
     super.initState();
+    Timer.periodic(Duration(minutes: 3), (Timer t) async {
+      timerService.isNoseModeAllowed();
+      noseModeAllowed.value = timerService.isAllowed;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
-      return SizedBox(
-        //decoration: BoxDecoration(
-        //  border: Border.all(
-        //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
-        //  borderRadius: BorderRadius.circular(8),
-        //),
-        height: MediaQuery.of(context).size.height,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 6, right: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Colors.transparent, Colors.black])
-                    .createShader(bounds),
-                child: CustomPaint(
-                  painter: CarouselConnectionLayerPainter(
-                    scrollOffset: _scrollOffsetParent,
-                    connection: Connection(
-                        0, bitonicSiblings.equallyDistributedHeights),
-                    height: constraints.maxHeight,
-                    width: AppConstants.canvasWidth * 0.22,
+      return Stack(
+        children: [
+          SizedBox(
+            //decoration: BoxDecoration(
+            //  border: Border.all(
+            //    color: Colors.lightBlue, width: AppConstants.nodeLineWidth),
+            //  borderRadius: BorderRadius.circular(8),
+            //),
+            height: MediaQuery.of(context).size.height,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 6, right: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Colors.transparent, Colors.black])
+                        .createShader(bounds),
+                    child: CustomPaint(
+                      painter: CarouselConnectionLayerPainter(
+                        scrollOffset: _scrollOffsetParent,
+                        connection: Connection(
+                            0, bitonicSiblings.equallyDistributedHeights),
+                        height: constraints.maxHeight,
+                        width: AppConstants.canvasWidth * 0.22,
+                      ),
+                      child: SizedBox(
+                        //decoration: BoxDecoration(
+                        //  border: Border.all(
+                        //      color: Colors.lightBlue,
+                        //      width: AppConstants.nodeLineWidth),
+                        //  borderRadius: BorderRadius.circular(8),
+                        //),
+                        width: AppConstants.canvasWidth * 0.22,
+                        height: constraints.maxHeight,
+                      ),
+                    ),
                   ),
-                  child: SizedBox(
-                    //decoration: BoxDecoration(
-                    //  border: Border.all(
-                    //      color: Colors.lightBlue,
-                    //      width: AppConstants.nodeLineWidth),
-                    //  borderRadius: BorderRadius.circular(8),
-                    //),
-                    width: AppConstants.canvasWidth * 0.22,
-                    height: constraints.maxHeight,
+                  NodeListCarousel(
+                      items: bitonicSiblings,
+                      height: constraints.maxHeight,
+                      controller: _controller,
+                      onChangeCallback: onScrollChangeCallback,
+                      onHorDragEndCallback: onHorDragEndCallbackParent),
+                  CustomPaint(
+                    painter: RegularConnectionLayerPainter(
+                        scrollOffset: _scrollOffsetChildren,
+                        connection: Connection(
+                            0, bitonicChildren.equallyDistributedHeights),
+                        height: constraints.maxHeight),
+                    child: SizedBox(
+                      //decoration: BoxDecoration(
+                      //  border: Border.all(
+                      //      color: Colors.lightBlue,
+                      //      width: AppConstants.nodeLineWidth),
+                      //  borderRadius: BorderRadius.circular(8),
+                      //),
+                      width: AppConstants.canvasWidth,
+                      height: constraints.maxHeight,
+                    ),
                   ),
-                ),
+                  NodeListRegular(
+                      items: bitonicChildren,
+                      height: constraints.maxHeight,
+                      onHorDragEndCallback: onHorDragEndCallbackChild)
+                ],
               ),
               NodeListCarousel(
                   items: bitonicSiblings,
@@ -110,8 +153,58 @@ class TreeViewState extends State<TreeView> {
                   onHorDragEndCallback: onHorDragEndCallbackChild,
                   notificationListener: childScrollNotification)
             ],
+            ),
           ),
-        ),
+          Positioned(
+            bottom: 16.0,
+            left: 16.0,
+            child: Row(
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: timerService.isRunning,
+                  builder: (context, isRunning, child) {
+                    return ValueListenableBuilder<bool>(
+                      valueListenable: noseModeAllowed,
+                      builder: (context, level, child) {
+                        return ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: timerService.isRunning.value
+                                ? Colors.white
+                                : Colors.black,
+                            backgroundColor: timerService.isRunning.value
+                                ? Colors.blueGrey
+                                : Colors.white,
+                          ),
+                          onPressed: (noseModeAllowed.value || isRunning) ? () {
+                            if (isRunning) {
+                              timerService.stopTimer();
+                            } else {
+                              timerService.startTimer();
+                            }
+                          } : null,
+                          child: Text(
+                              isRunning ? 'Stop Nose Mode' : 'Start Nose Mode'),
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(width: 10),
+                StreamBuilder<int>(
+                  stream: timerService.tickStream,
+                  builder: (context, snapshot) {
+                    if (timerService.isRunning.value && snapshot.hasData) {
+                      remaining_nose_mode_duration = snapshot.data!;
+                      return Text('($remaining_nose_mode_duration min)');
+                    } else {
+                      return Text('');
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       );
     });
   }
