@@ -11,7 +11,7 @@ Future<Tree> loadExampleJson() async {
     String jsonString =
         await rootBundle.loadString('assets/example_complex_tree.json');
     Map<String, dynamic> jsonData = json.decode(jsonString);
-    return Tree.jsonConstructor(jsonData['root']);
+    return Tree.jsonConstructor(jsonData);
   } catch (e) {
     print('Error loading/parsing JSON: $e');
     return Tree();

@@ -10,6 +10,8 @@ import 'connection_layer.dart';
 import '../services/nose_mode_service.dart';
 import '../settings/settings.dart';
 
+TreeNode? center;
+
 TimerService timerService = TimerService(noseModeDuration);
 var remaining_nose_mode_duration;
 final noseModeAllowed = ValueNotifier<bool>(true);
@@ -26,7 +28,6 @@ class TreeView extends StatefulWidget {
 class TreeViewState extends State<TreeView> {
   //TODO: override dispose and remove the memory leak we currently have (low prio)
   Tree todoTree;
-  TreeNode center;
 
   // final ScrollController _scrollController = ScrollController();
   final IndexTrackingCarouselController _controller =
@@ -39,9 +40,13 @@ class TreeViewState extends State<TreeView> {
   final _scrollOffsetChildren = ValueNotifier<List<double>>([0, 0]);
 
   TreeViewState({required this.todoTree})
-      : center = todoTree.root,
-        bitonicSiblings = BitonicSequence(todoTree.root),
-        bitonicChildren = BitonicSequence.fromIterable(todoTree.root.children);
+      : bitonicSiblings = BitonicSequence(todoTree.root),
+        bitonicChildren = BitonicSequence.fromIterable(todoTree.root.children) {
+    // if center was not set or deleted we set it to the root otherwise we keep the center
+    if (center == null || todoTree.findNodeWithId(center!.id) == null) {
+      center = todoTree.root;
+    }
+  }
 
   @override
   void initState() {
@@ -209,8 +214,8 @@ class TreeViewState extends State<TreeView> {
   void newCenter(TreeNode newCenter) {
     int index;
     center = newCenter;
-    bitonicSiblings = BitonicSequence.fromNode(center);
-    bitonicChildren = BitonicSequence.fromIterable(center.children);
+    bitonicSiblings = BitonicSequence.fromNode(center!);
+    bitonicChildren = BitonicSequence.fromIterable(center!.children);
     index = bitonicSiblings.indexOf(center);
     _scrollOffsetParent.value = [0, index * AppConstants.paddedNodeHeight * -1];
     _scrollOffsetChildren.value = [0, 0];
@@ -224,7 +229,7 @@ class TreeViewState extends State<TreeView> {
       bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1
     ];
     _scrollOffsetChildren.value = [0, 0];
-    bitonicChildren = BitonicSequence.fromIterable(center.children);
+    bitonicChildren = BitonicSequence.fromIterable(center!.children);
   }
 
   bool childScrollNotification(Notification notification) {

@@ -79,7 +79,6 @@ flutter:
   #   - images/a_dot_ham.jpeg
   assets:
     - assets/example_complex_tree.json
-    - assets/example_tree.json
     - assets/images/logo.png
     - assets/buttons/google_si/svg/neutral/android_neutral_rd_SI.svg
 

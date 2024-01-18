@@ -34,9 +34,7 @@ enum Priority implements Comparable<Priority> {
 class TreeNode {
   // 128 bit random number so we can ignore collisions
   String id;
-  bool _completed = false;
   DateTime? dueDate;
-  int _level;
 
   /// backlink to the Parent for ease of use
   TreeNode? parent;
@@ -50,13 +48,9 @@ class TreeNode {
   /// the priority
   Priority priority;
 
-  /// Timestamp since the last modification
-  /// (in microseconds since January 1, 1970, 00:00:00 UTC)
-  int modified;
-
-  /// Timestamp since the deletion
-  /// (in microseconds since January 1, 1970, 00:00:00 UTC)
-  int? deleted;
+  /// Timestamp of the completion null means the tasks is not completed
+  /// (in milliseconds since January 1, 1970, 00:00:00 UTC)
+  int? completed;
 
   /// SplayTreeSet of the Trees children (ordering is used by the visualisation)
   SplayTreeSet<TreeNode> _children;
@@ -94,11 +88,9 @@ class TreeNode {
   /// takes a [name] and a [priority]
   /// a [description] can also be supplied
   TreeNode(this.name, this.priority, {this.description, this.dueDate})
-      : modified = DateTime.now().microsecondsSinceEpoch,
-        _children = SplayTreeSet(treeNodeComparator),
+      : _children = SplayTreeSet(treeNodeComparator),
         id = const Uuid().v4(),
-        leafsInSubTree = 1,
-        _level = 0;
+        leafsInSubTree = 1;
 
   /// Constructs TreeNode that have already existed before
   ///
@@ -110,14 +102,11 @@ class TreeNode {
       this.name,
       this.description,
       this.priority,
-      this._completed,
-      this.modified,
-      this.deleted,
+      this.completed,
       this.dueDate,
       Iterable<TreeNode> childTasks)
       : _children = SplayTreeSet(treeNodeComparator),
-        leafsInSubTree = 1,
-        _level = 0 {
+        leafsInSubTree = 1 {
     for (var child in childTasks) {
       addChild(child);
     }
@@ -141,9 +130,7 @@ class TreeNode {
         json['name'] as String,
         json['description'] as String?,
         Priority.values[json['priority'] as int],
-        json['completed'] as bool,
-        json['modified'] as int,
-        json['modified'] as int?,
+        json['completed'] as int?,
         DateTime.tryParse(json['dueDate'] ?? ''),
         tmpChildren);
   }
@@ -154,10 +141,8 @@ class TreeNode {
   /// takes just the [id]
   TreeNode.comparisonNode(this.id)
       : priority = Priority.medium,
-        modified = 0,
         _children = SplayTreeSet(treeNodeComparator),
-        leafsInSubTree = 1,
-        _level = 0;
+        leafsInSubTree = 1;
 
   // Override == and hashCode in order to store this in a hash set
   @override
@@ -183,7 +168,6 @@ class TreeNode {
       return false;
     }
     child.parent = this;
-    child._level = _level + 1;
 
     // update our own leaf count
     if (leafIncrease != 0) {
@@ -291,41 +275,26 @@ class Tree {
   /// the root node
   TreeNode root;
 
+  int modified;
+
   /// Set with all nodes for fast lookup of specific nodes
   final HashSet<TreeNode> _taskSet = HashSet();
 
-  /// Map of the layers
-  late final Map<int, List<TreeNode>> _layers;
-
   /// Constructor for a new Tree
-  Tree() : root = TreeNode('Root', Priority.medium) {
-    _layers = {
-      0: [root]
-    };
+  Tree()
+      : root = TreeNode('Root', Priority.medium),
+        modified = DateTime.now().millisecondsSinceEpoch {
     _taskSet.add(root);
   }
 
   /// Constructs new tree from a root TreeNode
   /// Tree needs to be valid (correct parent etc)
-  Tree.fromRootNode(this.root) {
-    _layers = {
-      0: [root]
-    };
+  Tree.fromRootNode(this.root, this.modified) {
     buildTaskSet(root);
-    buildLevels(root);
   }
 
   factory Tree.jsonConstructor(dynamic json) {
-    return Tree.fromRootNode(TreeNode.fromJson(json));
-  }
-
-  /// gets all Nodes on one level
-  ///
-  /// takes a [level]
-  ///
-  /// return an iterable containing TreeNodes
-  Iterable<TreeNode> getLevel(int level) {
-    return _layers[level] ?? [];
+    return Tree.fromRootNode(TreeNode.fromJson(json["root"]), json["modified"] as int);
   }
 
   /// find the node with the [nodeId]
@@ -356,12 +325,6 @@ class Tree {
       _taskSet.remove(child);
       return false;
     }
-
-    if (_layers[targetNode._level] == null) {
-      _layers[targetNode._level] = [child];
-    } else {
-      _layers[targetNode._level]?.add(child);
-    }
     return true;
   }
 
@@ -370,34 +333,5 @@ class Tree {
       buildTaskSet(child);
     }
     _taskSet.add(subtree);
-  }
-
-  SplayTreeSet<TreeNode> getLayerFromNode(TreeNode node) {
-    return SplayTreeSet.from(
-        getLevel(node._level), TreeNode.treeNodeComparator);
-  }
-
-  void buildLevels(TreeNode root) {
-    List<TreeNode> tmp = [];
-
-    // Initialize the traversal Queue with the root's children
-    Queue<TreeNode> traversalQueue = Queue.from(root._children);
-
-    // Traverse all levels
-    for (var currentLevel = 1; traversalQueue.isNotEmpty; currentLevel++) {
-      // add all nodes of the next level to the temporary storage
-      for (TreeNode currentNode in traversalQueue) {
-        currentNode._level = currentLevel;
-        tmp.addAll(currentNode._children);
-      }
-      // traversalQueue contains the current level
-      _layers[currentLevel] = traversalQueue.toList();
-
-      traversalQueue.clear();
-      // add the nodes of the next level to the traversalQueue
-      traversalQueue.addAll(tmp);
-      // clear the temporary node storage
-      tmp.clear();
-    }
   }
 }
