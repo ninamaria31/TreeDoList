@@ -157,7 +157,7 @@ class TreeNode {
   /// adds TreeNodes to this TreeNode's [_children] and set the [parent]
   ///
   /// takes a [child]
-  /// also updates [leafsInSubTree] in its parent if necessary
+  /// also updates [leafsInSubTree] in its parent
   ///
   /// return true if successful
   bool addChild(TreeNode child) {
@@ -175,6 +175,59 @@ class TreeNode {
     }
     return true;
   }
+  
+  /// deleted a child form the Node's [_children]
+  /// 
+  /// takes a [child]
+  /// also updates [leafsInSubTree] in its parent
+  /// 
+  /// return true if successful
+  bool deleteChild(TreeNode child) {
+    if (!_children.remove(child)) {
+      return false;
+    }
+
+    updateLeafCount((_children.isEmpty) ? -child.leafsInSubTree + 1: -child.leafsInSubTree);
+    
+    return true;
+  }
+
+  /// deletes this node from its parent
+  ///
+  /// return ture if successful and false otherwise
+  /// returns false if this is the root
+  bool removeSelfFromParent() {
+    return parent?.deleteChild(this) ?? false;
+  }
+
+  bool _complete(int timeStamp) {
+    if (completed != null) {
+      return false;
+    }
+    completed = timeStamp;
+    for (var child in _children) {
+      child._complete(timeStamp);
+    }
+    return true;
+  }
+
+  /// complete this task/node
+  ///
+  /// the completion timestamp will be now()
+  bool complete() => _complete(DateTime.now().millisecondsSinceEpoch);
+
+  bool _undoComplete(int timeStamp) {
+    for (var child in _children) {
+      child._complete(timeStamp);
+    }
+    if (completed == timeStamp) {
+      completed = null;
+    }
+    return true;
+  }
+
+  /// undo the completion for this node and every child in the subtree with the same completion timestamp
+  bool undoComplete() => (completed == null) ? false : _undoComplete(completed!);
 
   /// update [leafsInSubTree] in the higher levels of the tree
   void updateLeafCount(int incLeafCount) {
@@ -290,7 +343,7 @@ class Tree {
   /// Constructs new tree from a root TreeNode
   /// Tree needs to be valid (correct parent etc)
   Tree.fromRootNode(this.root, this.modified) {
-    buildTaskSet(root);
+    _buildTaskSet(root);
   }
 
   factory Tree.jsonConstructor(dynamic json) {
@@ -327,10 +380,22 @@ class Tree {
     }
     return true;
   }
+  
+  /// removes the child from the tree
+  ///
+  /// takes a [node] which will be removed
+  ///
+  /// return true if successful
+  bool removeChild(TreeNode node) {
+    if (!_taskSet.contains(node)) {
+      return false;
+    }
+    return node.removeSelfFromParent() && _taskSet.remove(node);
+  }
 
-  void buildTaskSet(TreeNode subtree) {
+  void _buildTaskSet(TreeNode subtree) {
     for (var child in subtree._children) {
-      buildTaskSet(child);
+      _buildTaskSet(child);
     }
     _taskSet.add(subtree);
   }
