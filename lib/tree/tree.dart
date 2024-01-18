@@ -228,7 +228,18 @@ class TreeNode {
     if (completed == timeStamp) {
       completed = null;
     }
+    _markRecursivelyAsNotCompleted(parent);
+
     return true;
+  }
+
+  void _markRecursivelyAsNotCompleted(TreeNode? parent) {
+    if (parent?.completed == null ?? false) {
+      return;
+    }
+    parent!.completed = null;
+    _markRecursivelyAsNotCompleted(parent.parent);
+
   }
 
   /// undo the completion for this node and every child in the subtree with the same completion timestamp
