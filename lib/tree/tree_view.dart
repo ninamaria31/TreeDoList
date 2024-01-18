@@ -94,11 +94,13 @@ class TreeViewState extends State<TreeView> {
                     ),
                   ),
                   NodeListCarousel(
-                      items: bitonicSiblings,
-                      height: constraints.maxHeight,
-                      controller: _controller,
-                      onChangeCallback: onScrollChangeCallback,
-                      onHorDragEndCallback: onHorDragEndCallbackParent),
+                    items: bitonicSiblings,
+                    height: constraints.maxHeight,
+                    controller: _controller,
+                    onPageChangeCallback: onPageChangeCallback,
+                    onHorDragEndCallback: onHorDragEndCallbackParent,
+                    notificationListener: parentScrollNotification,
+                  ),
                   CustomPaint(
                     painter: RegularConnectionLayerPainter(
                         scrollOffset: _scrollOffsetChildren,
@@ -119,40 +121,10 @@ class TreeViewState extends State<TreeView> {
                   NodeListRegular(
                       items: bitonicChildren,
                       height: constraints.maxHeight,
-                      onHorDragEndCallback: onHorDragEndCallbackChild)
+                      onHorDragEndCallback: onHorDragEndCallbackChild,
+                      notificationListener: childScrollNotification)
                 ],
               ),
-              NodeListCarousel(
-                  items: bitonicSiblings,
-                  height: constraints.maxHeight,
-                  controller: _controller,
-                  onPageChangeCallback: onPageChangeCallback,
-                  onHorDragEndCallback: onHorDragEndCallbackParent,
-                  notificationListener: parentScrollNotification,
-              ),
-              CustomPaint(
-                painter: RegularConnectionLayerPainter(
-                    scrollOffset: _scrollOffsetChildren,
-                    connection: Connection(
-                        0, bitonicChildren.equallyDistributedHeights),
-                    height: constraints.maxHeight),
-                child: SizedBox(
-                  //decoration: BoxDecoration(
-                  //  border: Border.all(
-                  //      color: Colors.lightBlue,
-                  //      width: AppConstants.nodeLineWidth),
-                  //  borderRadius: BorderRadius.circular(8),
-                  //),
-                  width: AppConstants.canvasWidth,
-                  height: constraints.maxHeight,
-                ),
-              ),
-              NodeListRegular(
-                  items: bitonicChildren,
-                  height: constraints.maxHeight,
-                  onHorDragEndCallback: onHorDragEndCallbackChild,
-                  notificationListener: childScrollNotification)
-            ],
             ),
           ),
           Positioned(
@@ -175,13 +147,15 @@ class TreeViewState extends State<TreeView> {
                                 ? Colors.blueGrey
                                 : Colors.white,
                           ),
-                          onPressed: (noseModeAllowed.value || isRunning) ? () {
-                            if (isRunning) {
-                              timerService.stopTimer();
-                            } else {
-                              timerService.startTimer();
-                            }
-                          } : null,
+                          onPressed: (noseModeAllowed.value || isRunning)
+                              ? () {
+                                  if (isRunning) {
+                                    timerService.stopTimer();
+                                  } else {
+                                    timerService.startTimer();
+                                  }
+                                }
+                              : null,
                           child: Text(
                               isRunning ? 'Stop Nose Mode' : 'Start Nose Mode'),
                         );
@@ -245,8 +219,10 @@ class TreeViewState extends State<TreeView> {
 
   void shiftCenter(TreeNode sCenter) {
     center = sCenter;
-    double oldEnd = _scrollOffsetChildren.value[1];
-    _scrollOffsetParent.value = [0, bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1];
+    _scrollOffsetParent.value = [
+      0,
+      bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1
+    ];
     _scrollOffsetChildren.value = [0, 0];
     bitonicChildren = BitonicSequence.fromIterable(center.children);
   }
@@ -254,9 +230,15 @@ class TreeViewState extends State<TreeView> {
   bool childScrollNotification(Notification notification) {
     double oldStartChildren = _scrollOffsetChildren.value[0];
     if (notification is ScrollEndNotification) {
-      _scrollOffsetChildren.value = [oldStartChildren, -notification.metrics.pixels];
+      _scrollOffsetChildren.value = [
+        oldStartChildren,
+        -notification.metrics.pixels
+      ];
     } else if (notification is ScrollUpdateNotification) {
-      _scrollOffsetChildren.value = [oldStartChildren, -notification.metrics.pixels];
+      _scrollOffsetChildren.value = [
+        oldStartChildren,
+        -notification.metrics.pixels
+      ];
     }
     return true;
   }
@@ -275,18 +257,19 @@ class TreeViewState extends State<TreeView> {
       scrollOffset = notification.metrics.pixels;
     } else if (notification is ScrollUpdateNotification) {
       scrollOffset = notification.metrics.pixels;
-
-    } else  {
+    } else {
       return false;
     }
 
     newEndParent = -scrollOffset;
     scrollOffset %= AppConstants.paddedNodeHeight;
-    scrollOffsetOffset = AppConstants.paddedNodeHeight * (scrollOffset / AppConstants.paddedNodeCenter).floor();
+    scrollOffsetOffset = AppConstants.paddedNodeHeight *
+        (scrollOffset / AppConstants.paddedNodeCenter).floor();
     if (scrollOffsetOffset > AppConstants.paddedNodeHeight) {
       scrollOffsetOffset %= AppConstants.paddedNodeHeight;
     }
-    newStartChildren = -(scrollOffset % AppConstants.paddedNodeHeight) + scrollOffsetOffset;
+    newStartChildren =
+        -(scrollOffset % AppConstants.paddedNodeHeight) + scrollOffsetOffset;
     _scrollOffsetParent.value = [oldStartParent, newEndParent];
     _scrollOffsetChildren.value = [newStartChildren, oldEndChildren];
     return true;
@@ -400,18 +383,19 @@ class NodeListRegular extends NodeList {
                 // is has the exact height to make the combined height of our list items (nodes + invisible sizebox)
                 // equal to the screen height. So even if we scroll all the way to the bottom the bezier curves and
                 // and the nodes still line up
-                ..addAll((items.length * AppConstants.interNodeDistance <= height)
-                    ? []
-                    : [
-                        Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: Colors.lightBlueAccent,
-                                  width: AppConstants.nodeLineWidth),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            height: height % AppConstants.interNodeDistance)
-                      ])),
+                ..addAll(
+                    (items.length * AppConstants.interNodeDistance <= height)
+                        ? []
+                        : [
+                            Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: Colors.lightBlueAccent,
+                                      width: AppConstants.nodeLineWidth),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                height: height % AppConstants.interNodeDistance)
+                          ])),
         ));
   }
 
@@ -474,5 +458,4 @@ class IndexTrackingCarouselController extends CarouselControllerImpl {
 
   // yeah 20 lines of code for this
   int get index => _index;
-
 }
