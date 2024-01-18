@@ -33,7 +33,7 @@ class TimerService {
       _isRunning.value = true;
       _initialBrightness = await ScreenBrightnessPlatform.instance.current;
       Wakelock.enable();
-      await ScreenBrightnessPlatform.instance.setScreenBrightness(0.3);
+      await ScreenBrightnessPlatform.instance.setScreenBrightness(0.1);
     }
   }
 
