@@ -39,6 +39,8 @@ class TreeNode {
   /// backlink to the Parent for ease of use
   TreeNode? parent;
 
+  Tree? tree;
+
   /// Name of the task our task group
   String name = '';
 
@@ -175,6 +177,9 @@ class TreeNode {
     }
     return true;
   }
+
+  /// adds a child to this Node in the parent Tree (use this if you already have a tree
+  bool addNodeToParentTree(TreeNode newChild) => tree?.addChildToNode(id, newChild) ?? false;
   
   /// deleted a child form the Node's [_children]
   /// 
@@ -218,7 +223,7 @@ class TreeNode {
 
   bool _undoComplete(int timeStamp) {
     for (var child in _children) {
-      child._complete(timeStamp);
+      child._undoComplete(timeStamp);
     }
     if (completed == timeStamp) {
       completed = null;
@@ -378,6 +383,7 @@ class Tree {
       _taskSet.remove(child);
       return false;
     }
+    child.tree = this;
     return true;
   }
   
@@ -398,5 +404,6 @@ class Tree {
       _buildTaskSet(child);
     }
     _taskSet.add(subtree);
+    subtree.tree = this;
   }
 }

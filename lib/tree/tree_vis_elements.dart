@@ -8,20 +8,26 @@ class NodeWidget extends StatelessWidget {
   final bool showLeafCount;
 
   /// Function called when the node is tapped.
-  final void Function(TreeNode, BuildContext)? onTapCallback;
   final void Function(TreeNode, DragEndDetails)? onHorDragEndCallback;
+  final void Function(TreeNode, BuildContext)? onTapCallback;
+  final void Function(TreeNode, BuildContext)? onLongPressCallback;
+  final void Function(TreeNode)? onDoubleTapCallback;
 
   const NodeWidget(
       {super.key,
       required this.node,
       this.showLeafCount = false,
       this.onTapCallback,
-      this.onHorDragEndCallback});
+      this.onHorDragEndCallback,
+      this.onLongPressCallback,
+      this.onDoubleTapCallback});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => onTapCallback?.call(node, context),
+      onDoubleTap: () => onDoubleTapCallback?.call(node),
+      onLongPress: () => onLongPressCallback?.call(node, context),
       onHorizontalDragEnd: (details) =>
           onHorDragEndCallback?.call(node, details),
       child: (!showLeafCount)
@@ -47,7 +53,7 @@ class NodeWidget extends StatelessWidget {
                   height: AppConstants.nodeBadeSize,
                   child: Container(
                       decoration: BoxDecoration(
-                          color: node.priority.color,
+                          color: (node.completed == null) ? node.priority.color : Colors.grey,
                           border: Border.all(
                               color: const Color.fromARGB(255, 0, 0, 0),
                               width: AppConstants.nodeLineWidth),
@@ -68,7 +74,7 @@ class NodeWidget extends StatelessWidget {
         height: AppConstants.nodeHeight,
         width: AppConstants.nodeWidth,
         decoration: BoxDecoration(
-          color: node.priority.color,
+          color: (node.completed == null) ? node.priority.color : Colors.grey,
           border: Border.all(
               color: Colors.black, width: AppConstants.nodeLineWidth),
           borderRadius: BorderRadius.circular(AppConstants.nodeBorderRadius),

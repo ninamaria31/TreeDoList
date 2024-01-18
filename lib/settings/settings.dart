@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tree_do/tree/tree_view.dart';
+import 'package:tree_do/tree/tree_view_regular.dart';
 import '../auth.dart';
-import '../services/nose_mode_service.dart';
 
 // global variable for storing the duration of the nose mode
 int noseModeDuration = 15;

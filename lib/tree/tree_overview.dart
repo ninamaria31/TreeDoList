@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import '../app_constants.dart';
 import 'tree_vis_elements.dart';
+import 'package:tree_do/tree/tree_callbacks.dart';
 
 Future<Tree> loadExampleJson() async {
   try {
@@ -18,22 +19,38 @@ Future<Tree> loadExampleJson() async {
   }
 }
 
-class TreeOverviewWidget extends StatelessWidget {
-  final Tree tree;
+class TreeOverview extends StatefulWidget {
+  final Tree todoTree;
+
+  const TreeOverview({super.key, required this.todoTree});
+
+  @override
+  TreeOverviewState createState() =>
+      TreeOverviewState(todoTree: todoTree);
+}
+
+class TreeOverviewState extends State<TreeOverview> with TreeCallbacks<TreeOverview>{
+  final Tree todoTree;
   final TransformationController _controller = TransformationController();
 
-  TreeOverviewWidget({super.key, required this.tree});
+  TreeOverviewState({required this.todoTree});
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    _controller.value = Matrix4.identity()..scale(0.5);
+    _controller.value = Matrix4.identity()
+      ..scale(0.5);
 
     return InteractiveViewer(
         constrained: false,
         minScale: 0.1,
         maxScale: 10.0,
         transformationController: _controller,
-        child: _buildTree(tree.root, context));
+        child: _buildTree(todoTree.root, context));
   }
 
   Widget _buildTree(TreeNode currentNode, BuildContext context) {
@@ -49,8 +66,10 @@ class TreeOverviewWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           NodeWidget(
-            node: currentNode,
-            onTapCallback: _showDetails,
+              node: currentNode,
+              onTapCallback: onTapCallback,
+              onLongPressCallback: onLongPressCallback,
+              onDoubleTapCallback: onDoubleTapCallback
           ),
           if (currentNode.numberOfChildren > 0) ...[
             Container(
@@ -79,16 +98,4 @@ class TreeOverviewWidget extends StatelessWidget {
     );
   }
 
-  //// TODO: create a sufficient details screen
-  void _showDetails(TreeNode node, BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(node.name),
-            content: Text(
-                '${node.description ?? 'No Description'} due on ${node.dueDate?.toString()}'),
-          );
-        });
-  }
 }
