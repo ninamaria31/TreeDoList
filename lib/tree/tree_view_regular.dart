@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:tree_do/tree/tree_callbacks.dart';
 import 'package:tree_do/tree/tree_vis_elements.dart';
 import 'tree.dart';
 import 'package:snap_scroll_physics/snap_scroll_physics.dart';
@@ -9,43 +10,42 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'connection_layer.dart';
 import '../services/nose_mode_service.dart';
 import '../settings/settings.dart';
-
 TimerService timerService = TimerService(noseModeDuration);
 var remaining_nose_mode_duration;
 final noseModeAllowed = ValueNotifier<bool>(true);
 
-class TreeView extends StatefulWidget {
+class TreeViewRegular extends StatefulWidget {
   final Tree todoTree;
 
-  const TreeView({super.key, required this.todoTree});
+  const TreeViewRegular({super.key, required this.todoTree});
 
   @override
-  TreeViewState createState() => TreeViewState(todoTree: todoTree);
+  TreeViewRegularState createState() =>
+      TreeViewRegularState();
 }
 
-class TreeViewState extends State<TreeView> {
-  //TODO: override dispose and remove the memory leak we currently have (low prio)
-  Tree todoTree;
-  TreeNode center;
+// the TreeCallbacks provides the callback for tap, longpress, etc
+class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<TreeViewRegular> {
+  late Tree todoTree;
+  late TreeNode center;
 
   // final ScrollController _scrollController = ScrollController();
   final IndexTrackingCarouselController _controller =
       IndexTrackingCarouselController();
-  BitonicSequence bitonicSiblings;
-  BitonicSequence bitonicChildren;
+  late BitonicSequence bitonicSiblings;
+  late BitonicSequence bitonicChildren;
 
   // https://stackoverflow.com/questions/66327785/flutter-how-to-notify-custompainter-to-redraw
   final _scrollOffsetParent = ValueNotifier<List<double>>([0, 0]);
   final _scrollOffsetChildren = ValueNotifier<List<double>>([0, 0]);
 
-  TreeViewState({required this.todoTree})
-      : center = todoTree.root,
-        bitonicSiblings = BitonicSequence(todoTree.root),
-        bitonicChildren = BitonicSequence.fromIterable(todoTree.root.children);
-
   @override
   void initState() {
     super.initState();
+    todoTree = widget.todoTree;
+    center = todoTree.root;
+    bitonicSiblings = BitonicSequence(todoTree.root);
+    bitonicChildren = BitonicSequence.fromIterable(todoTree.root.children);
     Timer.periodic(Duration(minutes: 3), (Timer t) async {
       timerService.isNoseModeAllowed();
       noseModeAllowed.value = timerService.isAllowed;
@@ -94,13 +94,15 @@ class TreeViewState extends State<TreeView> {
                     ),
                   ),
                   NodeListCarousel(
-                    items: bitonicSiblings,
-                    height: constraints.maxHeight,
-                    controller: _controller,
-                    onPageChangeCallback: onPageChangeCallback,
-                    onHorDragEndCallback: onHorDragEndCallbackParent,
-                    notificationListener: parentScrollNotification,
-                  ),
+                      items: bitonicSiblings,
+                      height: constraints.maxHeight,
+                      controller: _controller,
+                      onPageChangeCallback: onPageChangeCallback,
+                      onHorDragEndCallback: onHorDragEndCallbackParent,
+                      notificationListener: parentScrollNotification,
+                      onTapCallback: onTapCallback,
+                      onLongPressCallback: onLongPressCallback,
+                      onDoubleTapCallback: onDoubleTapCallback),
                   CustomPaint(
                     painter: RegularConnectionLayerPainter(
                         scrollOffset: _scrollOffsetChildren,
@@ -122,7 +124,10 @@ class TreeViewState extends State<TreeView> {
                       items: bitonicChildren,
                       height: constraints.maxHeight,
                       onHorDragEndCallback: onHorDragEndCallbackChild,
-                      notificationListener: childScrollNotification)
+                      notificationListener: childScrollNotification,
+                      onTapCallback: onTapCallback,
+                      onLongPressCallback: onLongPressCallback,
+                      onDoubleTapCallback: onDoubleTapCallback)
                 ],
               ),
             ),
@@ -282,12 +287,18 @@ abstract class NodeList extends StatelessWidget {
   final double height;
 
   final void Function(TreeNode, DragEndDetails)? onHorDragEndCallback;
+  final void Function(TreeNode, BuildContext)? onTapCallback;
+  final void Function(TreeNode, BuildContext)? onLongPressCallback;
+  final void Function(TreeNode)? onDoubleTapCallback;
 
   NodeList(
       {super.key,
       required this.items,
       required this.height,
-      this.onHorDragEndCallback})
+      required this.onHorDragEndCallback,
+      required this.onTapCallback,
+      required this.onLongPressCallback,
+      required this.onDoubleTapCallback})
       : _scrollController = ScrollController();
 
   List<Widget> _buildTreeNodesListItems(Iterable<TreeNode> nodes,
@@ -296,6 +307,9 @@ abstract class NodeList extends StatelessWidget {
         .map((n) => NodeWidget(
               node: n,
               onHorDragEndCallback: onHorDragEndCallback,
+              onDoubleTapCallback: onDoubleTapCallback,
+              onLongPressCallback: onLongPressCallback,
+              onTapCallback: onTapCallback,
               showLeafCount: showLeafCount,
             ))
         .toList();
@@ -314,7 +328,10 @@ class NodeListCarousel extends NodeList {
       required this.controller,
       this.onPageChangeCallback,
       super.onHorDragEndCallback,
-      this.notificationListener});
+      this.notificationListener,
+      required super.onTapCallback,
+      required super.onLongPressCallback,
+      required super.onDoubleTapCallback});
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +370,10 @@ class NodeListRegular extends NodeList {
       required super.items,
       required super.height,
       super.onHorDragEndCallback,
-      this.notificationListener});
+      this.notificationListener,
+      required super.onTapCallback,
+      required super.onLongPressCallback,
+      required super.onDoubleTapCallback});
 
   @override
   Widget build(BuildContext context) {
