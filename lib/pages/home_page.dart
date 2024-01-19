@@ -40,6 +40,8 @@ class _TreeTestAppState extends State<TreeTestApp> {
   late TreeViewRegular treeView;
   late TreeOverview treeOverview;
 
+  final PageStorageBucket bucket = PageStorageBucket();
+
   @override
   void initState() {
     super.initState();
@@ -74,7 +76,7 @@ class _TreeTestAppState extends State<TreeTestApp> {
                   )
                 : null, // No AppBar in landscape orientation
             body: orientation == Orientation.portrait
-                ? treeView
+                ? PageStorage(bucket: bucket, child: treeView)
                 : treeOverview,
           );
         },
