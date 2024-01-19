@@ -25,19 +25,19 @@ class TreeOverview extends StatefulWidget {
   const TreeOverview({super.key, required this.todoTree});
 
   @override
-  TreeOverviewState createState() =>
-      TreeOverviewState(todoTree: todoTree);
+  TreeOverviewState createState() => TreeOverviewState();
 }
 
 class TreeOverviewState extends State<TreeOverview> with TreeCallbacks<TreeOverview>{
-  final Tree todoTree;
+  late final Tree todoTree;
   final TransformationController _controller = TransformationController();
 
-  TreeOverviewState({required this.todoTree});
+  TreeOverviewState();
 
   @override
   void initState() {
     super.initState();
+    todoTree = widget.todoTree;
   }
 
   @override

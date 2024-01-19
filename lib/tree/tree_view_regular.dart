@@ -10,9 +10,6 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'connection_layer.dart';
 import '../services/nose_mode_service.dart';
 import '../settings/settings.dart';
-
-TreeNode? center;
-
 TimerService timerService = TimerService(noseModeDuration);
 var remaining_nose_mode_duration;
 final noseModeAllowed = ValueNotifier<bool>(true);
@@ -24,38 +21,31 @@ class TreeViewRegular extends StatefulWidget {
 
   @override
   TreeViewRegularState createState() =>
-      TreeViewRegularState(todoTree: todoTree);
+      TreeViewRegularState();
 }
 
 // the TreeCallbacks provides the callback for tap, longpress, etc
 class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<TreeViewRegular> {
-  //TODO: override dispose and remove the memory leak we currently have (low prio)
-  Tree todoTree;
+  late Tree todoTree;
+  late TreeNode center;
 
   // final ScrollController _scrollController = ScrollController();
   final IndexTrackingCarouselController _controller =
       IndexTrackingCarouselController();
-  BitonicSequence bitonicSiblings;
-  BitonicSequence bitonicChildren;
+  late BitonicSequence bitonicSiblings;
+  late BitonicSequence bitonicChildren;
 
   // https://stackoverflow.com/questions/66327785/flutter-how-to-notify-custompainter-to-redraw
   final _scrollOffsetParent = ValueNotifier<List<double>>([0, 0]);
   final _scrollOffsetChildren = ValueNotifier<List<double>>([0, 0]);
 
-  TreeViewRegularState({required this.todoTree})
-      : bitonicSiblings = BitonicSequence(todoTree.root),
-        bitonicChildren = BitonicSequence.fromIterable(
-            todoTree.root.children) {
-    // if center was not set or deleted we set it to the root otherwise we keep the center
-    if (center == null ||
-        todoTree.findNodeWithId(center!.id) == null) {
-      center = todoTree.root;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
+    todoTree = widget.todoTree;
+    center = todoTree.root;
+    bitonicSiblings = BitonicSequence(todoTree.root);
+    bitonicChildren = BitonicSequence.fromIterable(todoTree.root.children);
     Timer.periodic(Duration(minutes: 3), (Timer t) async {
       timerService.isNoseModeAllowed();
       noseModeAllowed.value = timerService.isAllowed;
@@ -104,16 +94,15 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
                     ),
                   ),
                   NodeListCarousel(
-                    items: bitonicSiblings,
-                    height: constraints.maxHeight,
-                    controller: _controller,
-                    onPageChangeCallback: onPageChangeCallback,
-                    onHorDragEndCallback: onHorDragEndCallbackParent,
-                    notificationListener: parentScrollNotification,
-                    onTapCallback: onTapCallback,
-                    onLongPressCallback: onLongPressCallback,
-                    onDoubleTapCallback: onDoubleTapCallback
-                  ),
+                      items: bitonicSiblings,
+                      height: constraints.maxHeight,
+                      controller: _controller,
+                      onPageChangeCallback: onPageChangeCallback,
+                      onHorDragEndCallback: onHorDragEndCallbackParent,
+                      notificationListener: parentScrollNotification,
+                      onTapCallback: onTapCallback,
+                      onLongPressCallback: onLongPressCallback,
+                      onDoubleTapCallback: onDoubleTapCallback),
                   CustomPaint(
                     painter: RegularConnectionLayerPainter(
                         scrollOffset: _scrollOffsetChildren,
@@ -138,8 +127,7 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
                       notificationListener: childScrollNotification,
                       onTapCallback: onTapCallback,
                       onLongPressCallback: onLongPressCallback,
-                      onDoubleTapCallback: onDoubleTapCallback
-                  )
+                      onDoubleTapCallback: onDoubleTapCallback)
                 ],
               ),
             ),
@@ -226,8 +214,8 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
   void newCenter(TreeNode newCenter) {
     int index;
     center = newCenter;
-    bitonicSiblings = BitonicSequence.fromNode(center!);
-    bitonicChildren = BitonicSequence.fromIterable(center!.children);
+    bitonicSiblings = BitonicSequence.fromNode(center);
+    bitonicChildren = BitonicSequence.fromIterable(center.children);
     index = bitonicSiblings.indexOf(center);
     _scrollOffsetParent.value = [0, index * AppConstants.paddedNodeHeight * -1];
     _scrollOffsetChildren.value = [0, 0];
@@ -241,7 +229,7 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
       bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1
     ];
     _scrollOffsetChildren.value = [0, 0];
-    bitonicChildren = BitonicSequence.fromIterable(center!.children);
+    bitonicChildren = BitonicSequence.fromIterable(center.children);
   }
 
   bool childScrollNotification(Notification notification) {
