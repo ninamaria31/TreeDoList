@@ -43,9 +43,9 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
   void initState() {
     super.initState();
     todoTree = widget.todoTree;
-    center = todoTree.root;
-    bitonicSiblings = BitonicSequence(todoTree.root);
-    bitonicChildren = BitonicSequence.fromIterable(todoTree.root.children);
+    center = PageStorage.of(context).readState(context, identifier: const ValueKey("RegularViewCenter")) ?? todoTree.root;
+    bitonicSiblings = BitonicSequence(center);
+    bitonicChildren = BitonicSequence.fromIterable(center.children);
     Timer.periodic(Duration(minutes: 3), (Timer t) async {
       timerService.isNoseModeAllowed();
       noseModeAllowed.value = timerService.isAllowed;
@@ -220,6 +220,8 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
     _scrollOffsetParent.value = [0, index * AppConstants.paddedNodeHeight * -1];
     _scrollOffsetChildren.value = [0, 0];
     _controller.jumpToPage(index);
+    // save center in the bucket
+    PageStorage.of(context).writeState(context, center, identifier: const ValueKey("RegularViewCenter"));
   }
 
   void shiftCenter(TreeNode sCenter) {
@@ -230,6 +232,7 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
     ];
     _scrollOffsetChildren.value = [0, 0];
     bitonicChildren = BitonicSequence.fromIterable(center.children);
+    PageStorage.of(context).writeState(context, center, identifier: const ValueKey("RegularViewCenter"));
   }
 
   bool childScrollNotification(Notification notification) {
