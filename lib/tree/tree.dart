@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -34,6 +35,7 @@ enum Priority implements Comparable<Priority> {
 class TreeNode {
   // 128 bit random number so we can ignore collisions
   String id;
+
   DateTime? dueDate;
 
   /// backlink to the Parent for ease of use
@@ -135,6 +137,21 @@ class TreeNode {
         json['completed'] as int?,
         DateTime.tryParse(json['dueDate'] ?? ''),
         tmpChildren);
+  }
+
+  /// Serialize to json
+  ///
+  /// returns a json string
+  Map<String, dynamic> toJson() {
+    return {
+      "uuid": id,
+      "name": name,
+      "description": description,
+      "completed": completed,
+      "dueDate": dueDate?.toIso8601String(),
+      "priority": priority.index,
+      "children": _children.map((e) => e.toJson()).toList()
+    };
   }
 
   /// A constructor for creating nodes only used for comparisons
@@ -364,6 +381,15 @@ class Tree {
 
   factory Tree.jsonConstructor(dynamic json) {
     return Tree.fromRootNode(TreeNode.fromJson(json["root"]), json["modified"] as int);
+  }
+
+  String toJson() {
+    Map<String, dynamic> jsonTree = {
+      "modified": modified,
+      "root": root.toJson()
+    };
+
+    return const JsonEncoder.withIndent("    ").convert(jsonTree);
   }
 
   /// find the node with the [nodeId]
