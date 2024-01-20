@@ -255,8 +255,8 @@ class TreeNode {
 
   Iterable<TreeNode> get children => _children;
 
-  /// return a BitonicSequence of the children
-  BitonicSequence? get bitonicSiblings => BitonicSequence.fromNode(this);
+  /// return a BitonicSequence of the parents children if the node is the root it will be a BitonicSequence of the root
+  BitonicSequence get bitonicSiblings => BitonicSequence.ofSiblings(this);
 }
 
 /// A sequence which ascends first and then descends
@@ -269,7 +269,7 @@ class BitonicSequence with ListMixin<TreeNode> {
     if (center != null) _store.add(center);
   }
 
-  factory BitonicSequence.fromNode(TreeNode node) {
+  factory BitonicSequence.ofSiblings(TreeNode node) {
     SplayTreeSet<TreeNode> siblings;
     if (node.parent == null) {
       return BitonicSequence(node);

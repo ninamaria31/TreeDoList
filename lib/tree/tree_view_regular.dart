@@ -44,8 +44,9 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
     super.initState();
     todoTree = widget.todoTree;
     center = PageStorage.of(context).readState(context, identifier: const ValueKey("RegularViewCenter")) ?? todoTree.root;
-    bitonicSiblings = BitonicSequence(center);
+    bitonicSiblings = center.bitonicSiblings;
     bitonicChildren = BitonicSequence.fromIterable(center.children);
+    _scrollOffsetParent.value = [0, bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1];
     Timer.periodic(Duration(minutes: 3), (Timer t) async {
       timerService.isNoseModeAllowed();
       noseModeAllowed.value = timerService.isAllowed;
@@ -212,27 +213,27 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
 
   // this sets a new center in the parent (left view)
   void newCenter(TreeNode newCenter) {
-    int index;
     center = newCenter;
-    bitonicSiblings = BitonicSequence.fromNode(center);
+    bitonicSiblings = BitonicSequence.ofSiblings(center);
     bitonicChildren = BitonicSequence.fromIterable(center.children);
-    index = bitonicSiblings.indexOf(center);
-    _scrollOffsetParent.value = [0, index * AppConstants.paddedNodeHeight * -1];
-    _scrollOffsetChildren.value = [0, 0];
-    _controller.jumpToPage(index);
+    centerCarouselView(center);
     // save center in the bucket
     PageStorage.of(context).writeState(context, center, identifier: const ValueKey("RegularViewCenter"));
   }
 
   void shiftCenter(TreeNode sCenter) {
     center = sCenter;
-    _scrollOffsetParent.value = [
-      0,
-      bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1
-    ];
+    _scrollOffsetParent.value = [0, bitonicSiblings.indexOf(center) * AppConstants.paddedNodeHeight * -1];
     _scrollOffsetChildren.value = [0, 0];
     bitonicChildren = BitonicSequence.fromIterable(center.children);
     PageStorage.of(context).writeState(context, center, identifier: const ValueKey("RegularViewCenter"));
+  }
+
+  void centerCarouselView(TreeNode center) {
+    int index = bitonicSiblings.indexOf(center);
+    _scrollOffsetParent.value = [0, index * AppConstants.paddedNodeHeight * -1];
+    _scrollOffsetChildren.value = [0, 0];
+    _controller.jumpToPage(index);
   }
 
   bool childScrollNotification(Notification notification) {
@@ -285,7 +286,6 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
 }
 
 abstract class NodeList extends StatelessWidget {
-  final ScrollController _scrollController;
   final BitonicSequence items;
   final double height;
 
@@ -301,8 +301,7 @@ abstract class NodeList extends StatelessWidget {
       required this.onHorDragEndCallback,
       required this.onTapCallback,
       required this.onLongPressCallback,
-      required this.onDoubleTapCallback})
-      : _scrollController = ScrollController();
+      required this.onDoubleTapCallback});
 
   List<Widget> _buildTreeNodesListItems(Iterable<TreeNode> nodes,
       {bool showLeafCount = false}) {
@@ -367,6 +366,7 @@ class NodeListCarousel extends NodeList {
 
 class NodeListRegular extends NodeList {
   final bool Function(Notification)? notificationListener;
+  final ScrollController scrollController;
 
   NodeListRegular(
       {super.key,
@@ -376,7 +376,9 @@ class NodeListRegular extends NodeList {
       this.notificationListener,
       required super.onTapCallback,
       required super.onLongPressCallback,
-      required super.onDoubleTapCallback});
+      required super.onDoubleTapCallback,
+      ScrollController? scrollController})
+  : scrollController = scrollController ?? ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +396,7 @@ class NodeListRegular extends NodeList {
         child: NotificationListener(
           onNotification: notificationListener,
           child: ListView(
-              controller: _scrollController,
+              controller: scrollController,
               physics: SnapScrollPhysics.builder(getSnaps),
               scrollDirection: Axis.vertical,
               children: List.from(
