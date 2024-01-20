@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tree_do/tree/tree.dart';
 
 mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
-  void onTapCallback(TreeNode node, BuildContext context) => showDetails;
+  void onTapCallback(TreeNode node, BuildContext context) => showDetails(node, context);
   void onLongPressCallback(TreeNode node, BuildContext context) => addChild(node, context);
   void onDoubleTapCallback(TreeNode node) => toggleComplete(node);
 
