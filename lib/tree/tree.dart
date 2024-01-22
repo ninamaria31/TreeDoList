@@ -112,7 +112,7 @@ class TreeNode {
       : _children = SplayTreeSet(treeNodeComparator),
         leafsInSubTree = 1 {
     for (var child in childTasks) {
-      addChild(child);
+      _addChild(child);
     }
   }
 
@@ -173,13 +173,13 @@ class TreeNode {
   @override
   int get hashCode => id.hashCode;
 
-  /// adds TreeNodes to this TreeNode's [_children] and set the [parent]
+  /// adds TreeNodes to this TreeNode's [_children] and set the [parent] only for internal use
   ///
   /// takes a [child]
   /// also updates [leafsInSubTree] in its parent
   ///
   /// return true if successful
-  bool addChild(TreeNode child) {
+  bool _addChild(TreeNode child) {
     // if we used to be a leaf we need to take that into account
     int leafIncrease =
         (_children.isEmpty) ? child.leafsInSubTree - 1 : child.leafsInSubTree;
@@ -195,19 +195,25 @@ class TreeNode {
     return true;
   }
 
-  /// adds a child to this Node in the parent Tree (use this if you already have a tree
-  bool addNodeToParentTree(TreeNode newChild) => tree?.addChildToNode(id, newChild) ?? false;
+  /// adds a child to its children by calling addChildToNode in its parent tree
+  ///
+  /// takes a [newChild]
+  ///
+  /// return true if successful
+  bool addChild(TreeNode newChild) => tree?.addChildToNode(id, newChild) ?? false;
   
-  /// deleted a child form the Node's [_children]
+  /// deleted a child form the Node's [_children] for internal use only
   /// 
   /// takes a [child]
   /// also updates [leafsInSubTree] in its parent
   /// 
   /// return true if successful
-  bool deleteChild(TreeNode child) {
+  bool _removeChild(TreeNode child) {
     if (!_children.remove(child)) {
       return false;
     }
+
+    notifyModification();
 
     updateLeafCount((_children.isEmpty) ? -child.leafsInSubTree + 1: -child.leafsInSubTree);
     
@@ -218,8 +224,8 @@ class TreeNode {
   ///
   /// return ture if successful and false otherwise
   /// returns false if this is the root
-  bool removeSelfFromParent() {
-    return parent?.deleteChild(this) ?? false;
+  bool removeSelf() {
+    return parent?._removeChild(this) ?? false;
   }
 
   bool _complete(int timeStamp) {
@@ -230,6 +236,7 @@ class TreeNode {
     for (var child in _children) {
       child._complete(timeStamp);
     }
+    notifyModification();
     return true;
   }
 
@@ -246,7 +253,7 @@ class TreeNode {
       completed = null;
     }
     _markRecursivelyAsNotCompleted(parent);
-
+    notifyModification();
     return true;
   }
 
@@ -267,6 +274,8 @@ class TreeNode {
     leafsInSubTree += incLeafCount;
     parent?.updateLeafCount(incLeafCount);
   }
+
+  void notifyModification() => tree?.modify();
 
   int get numberOfChildren => _children.length;
 
@@ -415,12 +424,13 @@ class Tree {
     // addChild() sets the parent
     if (targetNode == null ||
         !_taskSet.add(child) ||
-        !targetNode.addChild(child)) {
+        !targetNode._addChild(child)) {
       // this means we didnt find anything or failed adding it the sets
       _taskSet.remove(child);
       return false;
     }
     child.tree = this;
+    modify();
     return true;
   }
   
@@ -433,7 +443,8 @@ class Tree {
     if (!_taskSet.contains(node)) {
       return false;
     }
-    return node.removeSelfFromParent() && _taskSet.remove(node);
+    modify();
+    return node.removeSelf() && _taskSet.remove(node);
   }
 
   void _buildTaskSet(TreeNode subtree) {
@@ -443,4 +454,6 @@ class Tree {
     _taskSet.add(subtree);
     subtree.tree = this;
   }
+
+  void modify() => modified = DateTime.now().millisecondsSinceEpoch;
 }
