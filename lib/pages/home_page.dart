@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../settings/settings.dart';
 import '../tree/tree.dart';
 import '../tree/tree_overview.dart';
-import '../tree/tree_view.dart';
+import '../tree/tree_view_regular.dart';
 import 'package:flutter/services.dart';
 
 class TreePage extends StatelessWidget {
@@ -37,16 +37,18 @@ class TreeTestApp extends StatefulWidget {
 }
 
 class _TreeTestAppState extends State<TreeTestApp> {
-  late TreeView treeView;
-  late TreeOverviewWidget treeOverview;
+  late TreeViewRegular treeView;
+  late TreeOverview treeOverview;
+
+  final PageStorageBucket bucket = PageStorageBucket();
 
   @override
   void initState() {
     super.initState();
     treeView =
-        TreeView(key: PageStorageKey('treeView'), todoTree: widget.todoTree);
+        TreeViewRegular(key: PageStorageKey('treeView'), todoTree: widget.todoTree);
     treeOverview =
-        TreeOverviewWidget(key: PageStorageKey('treeOverview'), tree: widget.todoTree);
+        TreeOverview(key: PageStorageKey('treeOverview'), todoTree: widget.todoTree);
   }
 
   @override
@@ -74,62 +76,11 @@ class _TreeTestAppState extends State<TreeTestApp> {
                   )
                 : null, // No AppBar in landscape orientation
             body: orientation == Orientation.portrait
-                ? treeView
+                ? PageStorage(bucket: bucket, child: treeView)
                 : treeOverview,
           );
         },
       ),
-    );
-  }
-}
-
-class TreeViewApp extends StatelessWidget {
-  final Tree todoTree;
-
-  const TreeViewApp({super.key, required this.todoTree});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'TreeDoList',
-        home: Scaffold(
-            appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-              title: const Text('TreeDoList'),
-              leading: Builder(
-                builder: (context) => IconButton(
-                  icon: const Icon(Icons.menu),
-                  tooltip: 'Settings',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => SettingsScreen()),
-                    );
-                  },
-                ),
-              ),
-            ),
-            body: OrientationBuilder(
-              builder: (context, orientation) {
-                return orientation == Orientation.portrait
-                    ? TreeOverviewWidget(tree: todoTree)
-                    : TreeLandscape(todoTree: todoTree);
-              },
-            )));
-  }
-}
-
-class TreeLandscape extends StatelessWidget {
-  final Tree todoTree;
-
-  const TreeLandscape({super.key, required this.todoTree});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Landscape view for tree: ${todoTree.root.name}'),
     );
   }
 }

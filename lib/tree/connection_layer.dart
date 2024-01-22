@@ -99,7 +99,6 @@ abstract class AbstractConnectionLayerPainter extends CustomPainter {
 
 class RegularConnectionLayerPainter extends AbstractConnectionLayerPainter {
   RegularConnectionLayerPainter({required super.connection, required super.scrollOffset, required super.height});
-  RegularConnectionLayerPainter.fromNode(super.node, {super.height}): super.fromNode();
 
   @override
   double calculateBaseEndOffset() {
@@ -114,6 +113,15 @@ class CarouselConnectionLayerPainter extends AbstractConnectionLayerPainter {
   double calculateBaseEndOffset() {
     return height / 2 - AppConstants.paddedNodeCenter;
   }
+}
+
+class OverviewConnectionLayerPainter extends AbstractConnectionLayerPainter {
+  OverviewConnectionLayerPainter({required super.connection, required super.scrollOffset, required super.height});
+  OverviewConnectionLayerPainter.fromNode(super.node, {super.height}): super.fromNode();
+
+  @override
+  double calculateBaseEndOffset() => 0;
+
 }
 
 /*class ConnectionLayerPainter extends CustomPainter {

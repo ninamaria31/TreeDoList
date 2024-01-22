@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -34,12 +35,13 @@ enum Priority implements Comparable<Priority> {
 class TreeNode {
   // 128 bit random number so we can ignore collisions
   String id;
-  bool _completed = false;
+
   DateTime? dueDate;
-  int _level;
 
   /// backlink to the Parent for ease of use
   TreeNode? parent;
+
+  Tree? tree;
 
   /// Name of the task our task group
   String name = '';
@@ -50,13 +52,9 @@ class TreeNode {
   /// the priority
   Priority priority;
 
-  /// Timestamp since the last modification
-  /// (in microseconds since January 1, 1970, 00:00:00 UTC)
-  int modified;
-
-  /// Timestamp since the deletion
-  /// (in microseconds since January 1, 1970, 00:00:00 UTC)
-  int? deleted;
+  /// Timestamp of the completion null means the tasks is not completed
+  /// (in milliseconds since January 1, 1970, 00:00:00 UTC)
+  int? completed;
 
   /// SplayTreeSet of the Trees children (ordering is used by the visualisation)
   SplayTreeSet<TreeNode> _children;
@@ -94,11 +92,9 @@ class TreeNode {
   /// takes a [name] and a [priority]
   /// a [description] can also be supplied
   TreeNode(this.name, this.priority, {this.description, this.dueDate})
-      : modified = DateTime.now().microsecondsSinceEpoch,
-        _children = SplayTreeSet(treeNodeComparator),
+      : _children = SplayTreeSet(treeNodeComparator),
         id = const Uuid().v4(),
-        leafsInSubTree = 1,
-        _level = 0;
+        leafsInSubTree = 1;
 
   /// Constructs TreeNode that have already existed before
   ///
@@ -110,14 +106,11 @@ class TreeNode {
       this.name,
       this.description,
       this.priority,
-      this._completed,
-      this.modified,
-      this.deleted,
+      this.completed,
       this.dueDate,
       Iterable<TreeNode> childTasks)
       : _children = SplayTreeSet(treeNodeComparator),
-        leafsInSubTree = 1,
-        _level = 0 {
+        leafsInSubTree = 1 {
     for (var child in childTasks) {
       addChild(child);
     }
@@ -141,11 +134,24 @@ class TreeNode {
         json['name'] as String,
         json['description'] as String?,
         Priority.values[json['priority'] as int],
-        json['completed'] as bool,
-        json['modified'] as int,
-        json['modified'] as int?,
+        json['completed'] as int?,
         DateTime.tryParse(json['dueDate'] ?? ''),
         tmpChildren);
+  }
+
+  /// Serialize to json
+  ///
+  /// returns a json string
+  Map<String, dynamic> toJson() {
+    return {
+      "uuid": id,
+      "name": name,
+      "description": description,
+      "completed": completed,
+      "dueDate": dueDate?.toIso8601String(),
+      "priority": priority.index,
+      "children": _children.map((e) => e.toJson()).toList()
+    };
   }
 
   /// A constructor for creating nodes only used for comparisons
@@ -154,10 +160,8 @@ class TreeNode {
   /// takes just the [id]
   TreeNode.comparisonNode(this.id)
       : priority = Priority.medium,
-        modified = 0,
         _children = SplayTreeSet(treeNodeComparator),
-        leafsInSubTree = 1,
-        _level = 0;
+        leafsInSubTree = 1;
 
   // Override == and hashCode in order to store this in a hash set
   @override
@@ -172,7 +176,7 @@ class TreeNode {
   /// adds TreeNodes to this TreeNode's [_children] and set the [parent]
   ///
   /// takes a [child]
-  /// also updates [leafsInSubTree] in its parent if necessary
+  /// also updates [leafsInSubTree] in its parent
   ///
   /// return true if successful
   bool addChild(TreeNode child) {
@@ -183,7 +187,6 @@ class TreeNode {
       return false;
     }
     child.parent = this;
-    child._level = _level + 1;
 
     // update our own leaf count
     if (leafIncrease != 0) {
@@ -191,6 +194,73 @@ class TreeNode {
     }
     return true;
   }
+
+  /// adds a child to this Node in the parent Tree (use this if you already have a tree
+  bool addNodeToParentTree(TreeNode newChild) => tree?.addChildToNode(id, newChild) ?? false;
+  
+  /// deleted a child form the Node's [_children]
+  /// 
+  /// takes a [child]
+  /// also updates [leafsInSubTree] in its parent
+  /// 
+  /// return true if successful
+  bool deleteChild(TreeNode child) {
+    if (!_children.remove(child)) {
+      return false;
+    }
+
+    updateLeafCount((_children.isEmpty) ? -child.leafsInSubTree + 1: -child.leafsInSubTree);
+    
+    return true;
+  }
+
+  /// deletes this node from its parent
+  ///
+  /// return ture if successful and false otherwise
+  /// returns false if this is the root
+  bool removeSelfFromParent() {
+    return parent?.deleteChild(this) ?? false;
+  }
+
+  bool _complete(int timeStamp) {
+    if (completed != null) {
+      return false;
+    }
+    completed = timeStamp;
+    for (var child in _children) {
+      child._complete(timeStamp);
+    }
+    return true;
+  }
+
+  /// complete this task/node
+  ///
+  /// the completion timestamp will be now()
+  bool complete() => _complete(DateTime.now().millisecondsSinceEpoch);
+
+  bool _undoComplete(int timeStamp) {
+    for (var child in _children) {
+      child._undoComplete(timeStamp);
+    }
+    if (completed == timeStamp) {
+      completed = null;
+    }
+    _markRecursivelyAsNotCompleted(parent);
+
+    return true;
+  }
+
+  void _markRecursivelyAsNotCompleted(TreeNode? parent) {
+    if (parent?.completed == null ?? false) {
+      return;
+    }
+    parent!.completed = null;
+    _markRecursivelyAsNotCompleted(parent.parent);
+
+  }
+
+  /// undo the completion for this node and every child in the subtree with the same completion timestamp
+  bool undoComplete() => (completed == null) ? false : _undoComplete(completed!);
 
   /// update [leafsInSubTree] in the higher levels of the tree
   void updateLeafCount(int incLeafCount) {
@@ -202,8 +272,8 @@ class TreeNode {
 
   Iterable<TreeNode> get children => _children;
 
-  /// return a BitonicSequence of the children
-  BitonicSequence? get bitonicSiblings => BitonicSequence.fromNode(this);
+  /// return a BitonicSequence of the parents children if the node is the root it will be a BitonicSequence of the root
+  BitonicSequence get bitonicSiblings => BitonicSequence.ofSiblings(this);
 }
 
 /// A sequence which ascends first and then descends
@@ -216,7 +286,7 @@ class BitonicSequence with ListMixin<TreeNode> {
     if (center != null) _store.add(center);
   }
 
-  factory BitonicSequence.fromNode(TreeNode node) {
+  factory BitonicSequence.ofSiblings(TreeNode node) {
     SplayTreeSet<TreeNode> siblings;
     if (node.parent == null) {
       return BitonicSequence(node);
@@ -291,41 +361,35 @@ class Tree {
   /// the root node
   TreeNode root;
 
+  int modified;
+
   /// Set with all nodes for fast lookup of specific nodes
   final HashSet<TreeNode> _taskSet = HashSet();
 
-  /// Map of the layers
-  late final Map<int, List<TreeNode>> _layers;
-
   /// Constructor for a new Tree
-  Tree() : root = TreeNode('Root', Priority.medium) {
-    _layers = {
-      0: [root]
-    };
+  Tree()
+      : root = TreeNode('Root', Priority.medium),
+        modified = DateTime.now().millisecondsSinceEpoch {
     _taskSet.add(root);
   }
 
   /// Constructs new tree from a root TreeNode
   /// Tree needs to be valid (correct parent etc)
-  Tree.fromRootNode(this.root) {
-    _layers = {
-      0: [root]
-    };
-    buildTaskSet(root);
-    buildLevels(root);
+  Tree.fromRootNode(this.root, this.modified) {
+    _buildTaskSet(root);
   }
 
   factory Tree.jsonConstructor(dynamic json) {
-    return Tree.fromRootNode(TreeNode.fromJson(json));
+    return Tree.fromRootNode(TreeNode.fromJson(json["root"]), json["modified"] as int);
   }
 
-  /// gets all Nodes on one level
-  ///
-  /// takes a [level]
-  ///
-  /// return an iterable containing TreeNodes
-  Iterable<TreeNode> getLevel(int level) {
-    return _layers[level] ?? [];
+  String toJson() {
+    Map<String, dynamic> jsonTree = {
+      "modified": modified,
+      "root": root.toJson()
+    };
+
+    return const JsonEncoder.withIndent("    ").convert(jsonTree);
   }
 
   /// find the node with the [nodeId]
@@ -356,48 +420,27 @@ class Tree {
       _taskSet.remove(child);
       return false;
     }
-
-    if (_layers[targetNode._level] == null) {
-      _layers[targetNode._level] = [child];
-    } else {
-      _layers[targetNode._level]?.add(child);
-    }
+    child.tree = this;
     return true;
   }
+  
+  /// removes the child from the tree
+  ///
+  /// takes a [node] which will be removed
+  ///
+  /// return true if successful
+  bool removeChild(TreeNode node) {
+    if (!_taskSet.contains(node)) {
+      return false;
+    }
+    return node.removeSelfFromParent() && _taskSet.remove(node);
+  }
 
-  void buildTaskSet(TreeNode subtree) {
+  void _buildTaskSet(TreeNode subtree) {
     for (var child in subtree._children) {
-      buildTaskSet(child);
+      _buildTaskSet(child);
     }
     _taskSet.add(subtree);
-  }
-
-  SplayTreeSet<TreeNode> getLayerFromNode(TreeNode node) {
-    return SplayTreeSet.from(
-        getLevel(node._level), TreeNode.treeNodeComparator);
-  }
-
-  void buildLevels(TreeNode root) {
-    List<TreeNode> tmp = [];
-
-    // Initialize the traversal Queue with the root's children
-    Queue<TreeNode> traversalQueue = Queue.from(root._children);
-
-    // Traverse all levels
-    for (var currentLevel = 1; traversalQueue.isNotEmpty; currentLevel++) {
-      // add all nodes of the next level to the temporary storage
-      for (TreeNode currentNode in traversalQueue) {
-        currentNode._level = currentLevel;
-        tmp.addAll(currentNode._children);
-      }
-      // traversalQueue contains the current level
-      _layers[currentLevel] = traversalQueue.toList();
-
-      traversalQueue.clear();
-      // add the nodes of the next level to the traversalQueue
-      traversalQueue.addAll(tmp);
-      // clear the temporary node storage
-      tmp.clear();
-    }
+    subtree.tree = this;
   }
 }
