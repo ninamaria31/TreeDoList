@@ -6,6 +6,8 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
   void onLongPressCallback(TreeNode node, BuildContext context) => addChild(node, context);
   void onDoubleTapCallback(TreeNode node) => toggleComplete(node);
 
+  bool _rebuildBitonicChildren = false;
+
 
 //// TODO: create a sufficient details screen (edit and remove)
   void showDetails(TreeNode node, BuildContext context, {bool? edit}) {
@@ -34,7 +36,14 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
     setState(() {
       TreeNode newNode = TreeNode("", Priority.medium);
       node.addChild(newNode);
+      _rebuildBitonicChildren = true;
       showDetails(newNode, context, edit: true);
     });
+  }
+  
+  bool get rebuildBitonicChildren {
+    bool tmp = _rebuildBitonicChildren;
+    _rebuildBitonicChildren = !_rebuildBitonicChildren;
+    return tmp;
   }
 }
