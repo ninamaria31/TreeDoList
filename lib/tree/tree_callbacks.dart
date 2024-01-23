@@ -8,6 +8,8 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
   void onTapCallback(TreeNode node, BuildContext context) =>
       showDetails(node, context);
 
+  bool _rebuildBitonicChildren = false;
+
   void onLongPressCallback(TreeNode node, BuildContext context) =>
       addChild(node, context);
 
@@ -241,8 +243,15 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
     setState(() {
       TreeNode newNode = TreeNode("", Priority.medium);
       node.addChild(newNode);
+      _rebuildBitonicChildren = true;
       showDetails(newNode, context, edit: true);
     });
+  }
+  
+  bool get rebuildBitonicChildren {
+    bool tmp = _rebuildBitonicChildren;
+    _rebuildBitonicChildren = !_rebuildBitonicChildren;
+    return tmp;
   }
 
   String formatDate(DateTime? date) {
