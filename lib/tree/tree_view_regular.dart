@@ -55,6 +55,9 @@ class TreeViewRegularState extends State<TreeViewRegular> with TreeCallbacks<Tre
 
   @override
   Widget build(BuildContext context) {
+    if (rebuildBitonicChildren) {
+      bitonicChildren = BitonicSequence.fromIterable(center.children);
+    }
     return LayoutBuilder(builder: (context, constraints) {
       return Stack(
         children: [
