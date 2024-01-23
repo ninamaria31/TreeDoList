@@ -49,6 +49,7 @@ dependencies:
   wakelock: ^0.6.2
   screen_brightness: ^0.2.2+1
   screen_brightness_android: ^0.1.0+2
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:
