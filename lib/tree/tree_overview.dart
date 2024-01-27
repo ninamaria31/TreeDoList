@@ -42,20 +42,29 @@ class TreeOverviewState extends State<TreeOverview> with TreeCallbacks<TreeOverv
 
   @override
   Widget build(BuildContext context) {
-    _controller.value = Matrix4.identity()
-      ..scale(0.5);
+    _controller.value = Matrix4.identity()..scale(0.5);
+
+    // times 2 because of our scaling and 30 to avoid the window to be scrollable
+    double height = MediaQuery.of(context).size.height * 2 - 30;
 
     return InteractiveViewer(
         constrained: false,
         minScale: 0.1,
         maxScale: 10.0,
+        boundaryMargin: const EdgeInsets.all(12),
         transformationController: _controller,
-        child: _buildTree(todoTree.root, context));
+        // this is kinda hacky
+        child: (AppConstants.subTreeHeight(todoTree.root.leafsInSubTree) >= height)
+        ? _buildTree(todoTree.root, context)
+        : SizedBox(
+            height: height,
+            child: _buildTree(todoTree.root, context))
+    );
   }
 
   Widget _buildTree(TreeNode currentNode, BuildContext context) {
     return Container(
-      // THIS SLIGHTLY INCREASES THE CONTAINER HEIGHT!
+       // THIS SLIGHTLY INCREASES THE CONTAINER HEIGHT!
       //decoration: BoxDecoration(
       //  border: Border.all(
       //      color: Colors.lightBlueAccent, width: AppConstants.nodeLineWidth),
