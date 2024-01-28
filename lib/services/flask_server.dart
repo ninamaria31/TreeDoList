@@ -6,7 +6,11 @@ import '../tree/tree.dart';
 Future<Tree> getTreeFromDB() async {
   var url = Uri.parse('http://10.0.2.2:5000/tree/${Auth().currentUser!.uid}');
   var response = await http.get(url);
-  return Tree.jsonConstructor(jsonDecode(response.body));
+  var tree = Tree.jsonConstructor(jsonDecode(response.body));
+  if (tree.removeExpiredCompletedTasks()) {
+    updateTreeDB(tree.toJson());
+  }
+  return tree;
 }
 
 Future<Tree> updateTreeDB(tree) async {

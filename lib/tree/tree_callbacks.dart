@@ -15,7 +15,6 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
 
   void onDoubleTapCallback(TreeNode node) => toggleComplete(node);
 
-//// TODO: create a sufficient details screen (edit and remove)
   void showDetails(TreeNode node, BuildContext context, {bool? edit}) {
     // remove: just call node.removeSelf() on the node which is supposed to be removed
     // if the node or tree was modified call node.notifyModification() or tree.modify() (the first just calls the latter)
@@ -238,7 +237,10 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
 
   void toggleComplete(TreeNode node) async {
     (node.completed == null) ? node.complete() : node.undoComplete();
-    Tree? updatedTree = await updateTreeDB(
+    // since we dont need the server response we can just ignore the return value
+    // which is neat since we don't need to stall the execution
+    //Tree? updatedTree = await
+    updateTreeDB(
         node.tree?.toJson()); // updates the tree in the database
     setState(() {
       node;
@@ -367,10 +369,10 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
                 child: const Text('Save'),
                 onPressed: () {
                   // Save the changes here
-                  newNode.name = name;
+                  newNode.name = name ?? "";
                   newNode.description = description;
                   newNode.dueDate = dueDate;
-                  newNode.priority = priority;
+                  newNode.priority = priority ?? Priority.medium;
                   newNode.notifyModification();
                   setState(() {
                     node.addChild(newNode);
@@ -398,7 +400,7 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
     if (date == null) {
       return 'No Due Date';
     } else {
-      var dayString = dayFormat.format(date?.day);
+      var dayString = dayFormat.format(date.day);
       var day = int.parse(dayString);
       var suffix = 'th';
 
@@ -414,7 +416,7 @@ mixin TreeCallbacks<T extends StatefulWidget> on State<T> {
       }
 
       var formatter = DateFormat('d\'$suffix\' MMMM yyyy');
-      return formatter.format(date!);
+      return formatter.format(date);
     }
   }
 }

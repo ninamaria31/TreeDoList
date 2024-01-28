@@ -225,7 +225,7 @@ class TreeNode {
   /// return ture if successful and false otherwise
   /// returns false if this is the root
   bool removeSelf() {
-    return parent?._removeChild(this) ?? false;
+    return tree?.removeChild(this) ?? false;
   }
 
   bool _complete(int timeStamp) {
@@ -440,11 +440,12 @@ class Tree {
   ///
   /// return true if successful
   bool removeChild(TreeNode node) {
-    if (!_taskSet.contains(node)) {
+    // if the node is the root you cant delete that.
+    if (node.parent == null || !_taskSet.contains(node)) {
       return false;
     }
     modify();
-    return node.removeSelf() && _taskSet.remove(node);
+    return node.parent!._removeChild(node) && _taskSet.remove(node);
   }
 
   void _buildTaskSet(TreeNode subtree) {
@@ -456,4 +457,25 @@ class Tree {
   }
 
   void modify() => modified = DateTime.now().millisecondsSinceEpoch;
+
+  bool removeExpiredCompletedTasks() {
+    bool changed = false;
+    int yesterdayTimestamp = DateTime.now().subtract(const Duration(days: 1)).millisecondsSinceEpoch;
+    List<TreeNode> deletionCandidates = _collectDeletionCandidates(root, yesterdayTimestamp);
+    for (var element in deletionCandidates) {
+      changed |= removeChild(element);
+    }
+    return changed;
+  }
+
+  List<TreeNode> _collectDeletionCandidates(TreeNode node, int yesterdayTimestamp) {
+    if (node.completed != null && node.completed! <= yesterdayTimestamp) {
+      return [node];
+    }
+    List<TreeNode> res = [];
+    for (var child in node.children) {
+      res.addAll(_collectDeletionCandidates(child, yesterdayTimestamp));
+    }
+    return res;
+  }
 }
