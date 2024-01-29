@@ -1,27 +1,15 @@
-# tree_do
+# TreeDo
 
-A tree structured todo list
+TreeDo is a todo list manager flutter app that uses a tree structure to organize tasks.
 
-## Getting Started
+For local testing, a flask server and a postgresql database were created. The app sends http requests to fetch/update the tree in the database. The corresponding repository can be found [here](https://github.com/ninamaria31/TreeDoServer).
 
-This project is a starting point for a Flutter application.
+Adding, deleting and editing are gesture based. 
 
-A few resources to get you started if this is your first Flutter project:
+Adding: Long tap on a node
+Editing/deleting: short tap on a node
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+To navigate the tree, swipe the nodes to the left or right.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+An overview mode is also available when rotating the phone. 
 
-
-Todos:
---> only focus on a task we can actually implememt. Then work the other task out but we don't have to implement it necessarily. 
-- Usability Challenge:
-  - Tree navigation (snapping, zooming, grid panning)
-  - Task prioritization
-
-- Connectivity Challenge:
-  - Concurrent user updates on different devices
-  - Merging (maybe user can also choose, or there are mergin libraries for JSON?)
